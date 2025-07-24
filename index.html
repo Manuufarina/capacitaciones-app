@@ -151,6 +151,9 @@
                     <button id="tab-news" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Noticias</button>
                 </nav>
             </div>
+            <div id="ecoescuelas-link" class="hidden mb-4 p-4 bg-yellow-100 rounded-lg text-center">
+                <a href="https://example.com/ECOESCUELAS.pdf" target="_blank" class="text-green-800 font-bold underline">Documento ECOESCUELAS</a>
+            </div>
 
             <!-- Available Courses View -->
             <div id="view-available-courses">
@@ -188,14 +191,32 @@
             <div id="view-turnos" class="hidden">
                 <h3 class="text-3xl font-bold mb-6 brand-green">Reservar Turno para Charlas</h3>
                 <form id="turno-form" class="space-y-4 mb-8">
-                    <input type="text" id="turno-institucion" placeholder="Institución" class="w-full px-4 py-2 border rounded-lg" required>
-                    <input type="text" id="turno-direccion" placeholder="Dirección de la institución" class="w-full px-4 py-2 border rounded-lg" required>
+                    <input type="text" id="turno-institucion" placeholder="Nombre de la institución" class="w-full px-4 py-2 border rounded-lg" required>
+                    <input type="text" id="turno-direccion" placeholder="Dirección (calle, número y barrio)" class="w-full px-4 py-2 border rounded-lg" required>
                     <label class="flex items-center space-x-2"><input type="checkbox" id="turno-es-escuela"><span>¿Es escuela?</span></label>
                     <div id="turno-datos-escuela" class="space-y-2 hidden">
-                        <input type="text" id="turno-curso" placeholder="Curso" class="w-full px-4 py-2 border rounded-lg">
-                        <input type="text" id="turno-nivel" placeholder="Nivel" class="w-full px-4 py-2 border rounded-lg">
-                        <input type="text" id="turno-docente" placeholder="Docente a cargo" class="w-full px-4 py-2 border rounded-lg">
-                        <input type="number" id="turno-alumnos" placeholder="Cantidad de alumnos" class="w-full px-4 py-2 border rounded-lg">
+                        <select id="turno-tipo" class="w-full px-4 py-2 border rounded-lg">
+                            <option value="publica">Institución pública</option>
+                            <option value="privada">Institución privada</option>
+                        </select>
+                        <input type="text" id="turno-grado" placeholder="Grado" class="w-full px-4 py-2 border rounded-lg">
+                        <select id="turno-nivel" class="w-full px-4 py-2 border rounded-lg">
+                            <option value="inicial">Inicial</option>
+                            <option value="primaria">Primaria</option>
+                            <option value="secundaria">Secundaria</option>
+                        </select>
+                        <input type="number" id="turno-alumnos" placeholder="Número de alumnos (máx. 30)" max="30" class="w-full px-4 py-2 border rounded-lg">
+                        <select id="turno-taller" class="w-full px-4 py-2 border rounded-lg">
+                            <option value="GIRSU: Reciclables">GIRSU: Reciclado</option>
+                            <option value="GIRSU: Compostaje">GIRSU: Compostaje</option>
+                            <option value="Cuidado del agua">Cuidado del agua</option>
+                            <option value="Cambio Climático: Transporte">Cambio Climático: Transporte</option>
+                            <option value="Cambio Climático: Energía">Cambio Climático: Energía</option>
+                        </select>
+                        <input type="text" id="turno-referente" placeholder="Nombre del referente a cargo" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="text" id="turno-telefono" placeholder="Teléfono de contacto" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="email" id="turno-email" placeholder="Mail de contacto" class="w-full px-4 py-2 border rounded-lg">
+                        <textarea id="turno-observaciones" placeholder="Observaciones (opcional)" class="w-full px-4 py-2 border rounded-lg"></textarea>
                     </div>
                     <input type="number" id="turno-asistentes" placeholder="Cantidad de asistentes" class="w-full px-4 py-2 border rounded-lg" required>
                     <select id="turno-slot" class="w-full px-4 py-2 border rounded-lg" required></select>
@@ -294,7 +315,13 @@
                 <form id="slot-form" class="space-y-4">
                     <input type="hidden" id="slot-id">
                     <input type="date" id="slot-date" class="w-full px-4 py-2 border rounded-lg" required>
-                    <input type="time" id="slot-time" class="w-full px-4 py-2 border rounded-lg" required>
+                    <input type="time" id="slot-time" list="slot-times" class="w-full px-4 py-2 border rounded-lg" required>
+                    <datalist id="slot-times">
+                        <option value="09:00">
+                        <option value="11:00">
+                        <option value="13:30">
+                        <option value="15:00">
+                    </datalist>
                     <div class="flex justify-end space-x-4 mt-6">
                         <button type="button" id="cancel-slot-form" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">Cancelar</button>
                         <button type="submit" class="brand-bg-green text-white font-bold py-2 px-6 rounded-lg">Guardar</button>
@@ -616,6 +643,7 @@
         async function showMainApp() {
             welcomeMessage.textContent = `Bienvenido/a, ${currentUser.name.split(' ')[0]}`;
             userInfoDiv.style.display = 'block';
+            document.getElementById('ecoescuelas-link').style.display = 'block';
             showSection('main');
             showView('available');
             await loadMyInscriptions();
@@ -756,6 +784,11 @@
         // --- CALENDAR FUNCTIONS ---
         const calendarBody = document.getElementById('calendar-body');
         const monthYearEl = document.getElementById('calendar-month-year');
+        function getFirstSaturday(year, month) {
+            const first = new Date(year, month, 1);
+            const offset = (6 - first.getDay() + 7) % 7;
+            return 1 + offset;
+        }
         function renderCalendar() {
             calendarBody.innerHTML = '';
             const date = currentCalendarDate;
@@ -766,18 +799,21 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const startDayOfWeek = firstDayOfMonth.getDay();
             for (let i = 0; i < startDayOfWeek; i++) { calendarBody.innerHTML += `<div class="calendar-day other-month"></div>`; }
+            const cleanupDay = getFirstSaturday(year, month);
+            const cleanupDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(cleanupDay).padStart(2, '0')}`;
+            const events = allCourses.concat([{ title: 'Limpieza del río en la reserva', date: cleanupDateStr, infoOnly: true }]);
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
                 dayEl.className = 'calendar-day';
                 dayEl.innerHTML = `<span>${day}</span>`;
                 const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const coursesOnThisDay = allCourses.filter(c => c.date === currentDateStr);
+                const coursesOnThisDay = events.filter(c => c.date === currentDateStr);
                 if (coursesOnThisDay.length > 0) {
                     dayEl.innerHTML += `<div class="calendar-event-dot"></div>`;
                     dayEl.style.cursor = 'pointer';
                     dayEl.onclick = () => {
-                        const courseTitles = coursesOnThisDay.map(c => `- ${c.title}`).join('\n');
-                        showModal(`Capacitaciones para el ${day}/${month+1}:\n${courseTitles}`);
+                        const courseTitles = coursesOnThisDay.map(c => `- ${c.title}${c.infoOnly ? ' (informativo)' : ''}`).join('\n');
+                        showModal(`Eventos para el ${day}/${month+1}:\n${courseTitles}`);
                     };
                 }
                 calendarBody.appendChild(dayEl);
@@ -888,15 +924,33 @@
                 const slotRef = doc(db, 'artifacts', appId, 'public', 'data', 'turnos', slotId);
                 const slotSnap = await getDoc(slotRef);
                 if (!slotSnap.exists() || slotSnap.data().reserved) { showModal('El turno ya no está disponible'); return; }
+                const institucion = document.getElementById('turno-institucion').value;
+                const alumnos = parseInt(document.getElementById('turno-alumnos').value || '0');
+                if (alumnos > 30) { showModal('El n\u00famero m\u00e1ximo de alumnos es 30'); return; }
+                const year = new Date().getFullYear();
+                const qCount = query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('reservation.institucion','==', institucion));
+                const snapCount = await getDocs(qCount);
+                let countYear = 0;
+                snapCount.forEach(d => { const r = d.data().reservation; if (r && new Date(r.timestamp).getFullYear() === year) countYear++; });
+                if (countYear >= 6) { showModal('La instituci\u00f3n ya alcanz\u00f3 el m\u00e1ximo de 6 talleres este a\u00f1o'); return; }
+                const tallerSel = document.getElementById('turno-taller').value;
+                const qFirst = query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('reservation.institucion','==', institucion), where('reservation.taller','==','GIRSU: Reciclables'));
+                const snapFirst = await getDocs(qFirst);
+                if (tallerSel !== 'GIRSU: Reciclables' && snapFirst.empty) { showModal('Primero debe realizar el taller GIRSU: Reciclables'); return; }
                 const reserva = {
                     slotId,
-                    institucion: document.getElementById('turno-institucion').value,
+                    institucion,
                     direccion: document.getElementById('turno-direccion').value,
                     esEscuela: document.getElementById('turno-es-escuela').checked,
-                    curso: document.getElementById('turno-curso').value,
+                    tipo: document.getElementById('turno-tipo').value,
+                    grado: document.getElementById('turno-grado').value,
                     nivel: document.getElementById('turno-nivel').value,
-                    docente: document.getElementById('turno-docente').value,
-                    alumnos: document.getElementById('turno-alumnos').value,
+                    taller: tallerSel,
+                    referente: document.getElementById('turno-referente').value,
+                    telefono: document.getElementById('turno-telefono').value,
+                    contactoEmail: document.getElementById('turno-email').value,
+                    observaciones: document.getElementById('turno-observaciones').value,
+                    alumnos,
                     asistentes: document.getElementById('turno-asistentes').value,
                     userId: currentUserId,
                     dni: currentUser.dni,
@@ -908,7 +962,7 @@
                 await setDoc(doc(db, 'artifacts', appId, 'users', currentUserId, 'turnos', slotId), reserva);
                 turnoForm.reset();
                 datosEscuelaDiv.style.display = 'none';
-                showModal('Turno reservado. Recibirá un correo de confirmación.');
+                showModal('Se envió un correo de confirmación. Recibirá un recordatorio el día anterior y un mail de agradecimiento.', true);
             } catch(err) { console.error(err); showModal('No se pudo reservar el turno'); }
             finally { loadingSpinner.style.display = 'none'; }
         }
@@ -1155,6 +1209,9 @@
             const id = document.getElementById('slot-id').value;
             const date = document.getElementById('slot-date').value;
             const time = document.getElementById('slot-time').value;
+            const day = new Date(date + 'T00:00').getDay();
+            if (![1,2,4,5].includes(day)) { showModal('Solo se permiten turnos lunes, martes, jueves y viernes'); return; }
+            if (!['09:00','11:00','13:30','15:00'].includes(time)) { showModal('Horario de turno no válido'); return; }
             try {
                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('date','==', date));
                 const snapshot = await getDocs(q);
