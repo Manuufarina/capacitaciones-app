@@ -386,11 +386,12 @@
 
         // --- GLOBAL STATE ---
         let currentUser = null;
-        let currentUserId = null; 
+        let currentUserId = null;
         let isAuthReady = false;
         let isAdminLoggedIn = false;
         let currentCalendarDate = new Date();
         let allCourses = []; // Cache for calendar
+        let userEnrollments = {}; // Track user enrollments
         let actionToConfirm = null; // For confirmation modal
 
         // --- DOM ELEMENTS ---
@@ -501,6 +502,7 @@
                 });
                 renderCalendar();
                 document.querySelectorAll('.enroll-button').forEach(button => button.addEventListener('click', handleEnrollment));
+                updateCourseCards();
             });
 
             const newsRef = collection(db, 'artifacts', appId, 'public', 'data', 'news');
@@ -557,7 +559,7 @@
 
         function createCourseCard(course) {
             return `
-                <div class="card bg-white rounded-xl shadow-md overflow-hidden p-6 border-l-4 brand-border-green flex flex-col">
+                <div class="card course-card bg-white rounded-xl shadow-md overflow-hidden p-6 border-l-4 brand-border-green flex flex-col" data-course-id="${course.id}">
                     <h4 class="text-xl font-bold brand-green mb-2">${course.title}</h4>
                     <p class="text-gray-600 mb-4 flex-grow">${course.description}</p>
                     <div class="space-y-2 text-sm text-gray-800">
@@ -570,6 +572,25 @@
                     <button data-course-id="${course.id}" data-course-title="${course.title}" class="enroll-button w-full mt-4 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">Inscribirme</button>
                 </div>
             `;
+        }
+
+        function updateCourseCards() {
+            document.querySelectorAll('.course-card').forEach(card => {
+                const courseId = card.dataset.courseId;
+                const button = card.querySelector('.enroll-button');
+                if (!button) return;
+                if (userEnrollments[courseId]) {
+                    card.classList.add('bg-gray-200');
+                    button.textContent = 'Ya estás inscripto';
+                    button.className = 'enroll-button w-full mt-4 bg-gray-400 text-white font-bold py-2 px-4 rounded-lg cursor-default';
+                    button.disabled = true;
+                } else {
+                    card.classList.remove('bg-gray-200');
+                    button.textContent = 'Inscribirme';
+                    button.className = 'enroll-button w-full mt-4 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors';
+                    button.disabled = false;
+                }
+            });
         }
         
         async function handleEnrollment(event) {
@@ -611,11 +632,13 @@
             if (!currentUserId) return;
             const enrollmentsRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'enrollments');
             onSnapshot(enrollmentsRef, async (snapshot) => {
-                if (snapshot.empty) { inscriptionsListDiv.innerHTML = '<p>Aún no se ha inscripto a ninguna capacitación.</p>'; renderBadges([]); return; }
+                if (snapshot.empty) { inscriptionsListDiv.innerHTML = '<p>Aún no se ha inscripto a ninguna capacitación.</p>'; userEnrollments = {}; updateCourseCards(); renderBadges([]); return; }
                 inscriptionsListDiv.innerHTML = '';
+                userEnrollments = {};
                 let completedCoursesCount = 0;
                 for (const enrollmentDoc of snapshot.docs) {
                     const enrollment = { id: enrollmentDoc.id, ...enrollmentDoc.data() };
+                    userEnrollments[enrollment.id] = true;
                     const courseDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'courses', enrollment.id);
                     const courseSnap = await getDoc(courseDocRef);
                     if (courseSnap.exists()) {
@@ -644,6 +667,7 @@
                 document.querySelectorAll('.download-cert-button').forEach(b => b.addEventListener('click', generateCertificate));
                 document.querySelectorAll('.open-survey-button').forEach(b => b.addEventListener('click', (e) => openSurvey(e.target.dataset.courseId)));
                 document.querySelectorAll('.view-materials-button').forEach(b => b.addEventListener('click', (e) => openCourseMaterials(e.target.dataset.courseId)));
+                updateCourseCards();
             });
         }
         
