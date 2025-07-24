@@ -569,8 +569,8 @@
             const enrolledUsersRef = collection(courseRef, 'enrolledUsers');
             const waitlistedUsersRef = collection(courseRef, 'waitlistedUsers');
             const [enrolledSnap, waitlistedSnap] = await Promise.all([getDocs(enrolledUsersRef), getDocs(waitlistedUsersRef)]);
-            const isAlreadyEnrolled = enrolledSnap.docs.some(d => d.id === currentUserId);
-            const isAlreadyWaitlisted = waitlistedSnap.docs.some(d => d.id === currentUserId);
+            const isAlreadyEnrolled = enrolledSnap.docs.some(d => d.id === currentUserId || d.data().dni === currentUser.dni);
+            const isAlreadyWaitlisted = waitlistedSnap.docs.some(d => d.id === currentUserId || d.data().dni === currentUser.dni);
             if (isAlreadyEnrolled || isAlreadyWaitlisted) { showModal(`Ya se encuentra inscripto/a o en lista de espera para "${courseTitle}".`); return; }
             loadingSpinner.style.display = 'flex';
             try {
