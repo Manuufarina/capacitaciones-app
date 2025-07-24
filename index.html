@@ -231,7 +231,9 @@
                         <input type="number" id="course-capacity" placeholder="Cupo (0 para ilimitado)" class="w-full px-4 py-2 border rounded-lg">
                         <label class="flex items-center space-x-2"><input type="checkbox" id="course-waitlist"><span>Habilitar lista de espera</span></label>
                     </div>
-                    <textarea id="course-materials" placeholder="Materiales (un enlace por línea)" class="w-full px-4 py-2 border rounded-lg h-24"></textarea>
+                    <textarea id="course-materials" placeholder="Enlaces (uno por línea)" class="w-full px-4 py-2 border rounded-lg h-24"></textarea>
+                    <label class="block mt-2 font-medium">PDFs (opcional)</label>
+                    <input type="file" id="course-pdfs" accept="application/pdf" multiple class="w-full">
                     <div class="flex justify-end space-x-4 mt-6">
                         <button type="button" id="cancel-course-form" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">Cancelar</button>
                         <button type="submit" class="brand-bg-green text-white font-bold py-2 px-6 rounded-lg">Guardar</button>
@@ -368,6 +370,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, getDocs, query, where, onSnapshot, writeBatch, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         // --- CONFIG & INITIALIZATION ---
         const firebaseConfig = {
@@ -383,6 +386,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const storage = getStorage(app);
 
         // --- GLOBAL STATE ---
         let currentUser = null;
@@ -766,6 +770,7 @@
         }
         function openCourseForm(courseId = null) {
             courseForm.reset();
+            document.getElementById('course-pdfs').value = '';
             document.getElementById('course-form-title').textContent = courseId ? "Editar Capacitación" : "Crear Capacitación";
             if (courseId) {
                 getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId)).then(docSnap => {
@@ -791,8 +796,10 @@
         async function saveCourse(e) {
             e.preventDefault();
             loadingSpinner.style.display = 'flex';
-            const courseId = document.getElementById('course-id').value;
-            const courseData = {
+            let courseId = document.getElementById('course-id').value;
+            const pdfInput = document.getElementById('course-pdfs');
+            let materials = document.getElementById('course-materials').value.split('\n').filter(link => link.trim() !== '');
+            const baseData = {
                 title: document.getElementById('course-title').value,
                 description: document.getElementById('course-description').value,
                 speaker: document.getElementById('course-speaker').value,
@@ -801,13 +808,30 @@
                 format: document.getElementById('course-format').value,
                 capacity: parseInt(document.getElementById('course-capacity').value) || 0,
                 waitlist: document.getElementById('course-waitlist').checked,
-                materials: document.getElementById('course-materials').value.split('\n').filter(link => link.trim() !== ''),
+                materials,
             };
             try {
-                if (courseId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId), courseData); } 
-                else { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), courseData); }
+                let docRef;
+                if (courseId) {
+                    docRef = doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId);
+                    await updateDoc(docRef, baseData);
+                } else {
+                    docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), baseData);
+                    courseId = docRef.id;
+                }
+                const uploadedLinks = [];
+                for (const file of pdfInput.files) {
+                    const fileRef = storageRef(storage, `courses/${courseId}/${file.name}`);
+                    await uploadBytes(fileRef, file);
+                    uploadedLinks.push(await getDownloadURL(fileRef));
+                }
+                if (uploadedLinks.length > 0) {
+                    materials = materials.concat(uploadedLinks);
+                    await updateDoc(docRef, { materials });
+                }
                 showModal("Capacitación guardada.");
                 courseFormModal.style.display = 'none';
+                pdfInput.value = '';
             } catch (error) { console.error("Error saving course:", error); showModal("Error al guardar."); }
             finally { loadingSpinner.style.display = 'none'; }
         }
