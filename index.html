@@ -147,6 +147,7 @@
                     <button id="tab-available" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg border-b-4 brand-border-green brand-green">Capacitaciones</button>
                     <button id="tab-calendar" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Calendario</button>
                     <button id="tab-my-inscriptions" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Mis Inscripciones</button>
+                    <button id="tab-turnos" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Turnos Charlas</button>
                     <button id="tab-news" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Noticias</button>
                 </nav>
             </div>
@@ -182,6 +183,27 @@
                  </div>
                  <div id="my-inscriptions-list" class="space-y-6"></div>
             </div>
+
+            <!-- Turnos View -->
+            <div id="view-turnos" class="hidden">
+                <h3 class="text-3xl font-bold mb-6 brand-green">Reservar Turno para Charlas</h3>
+                <form id="turno-form" class="space-y-4 mb-8">
+                    <input type="text" id="turno-institucion" placeholder="Institución" class="w-full px-4 py-2 border rounded-lg" required>
+                    <input type="text" id="turno-direccion" placeholder="Dirección de la institución" class="w-full px-4 py-2 border rounded-lg" required>
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="turno-es-escuela"><span>¿Es escuela?</span></label>
+                    <div id="turno-datos-escuela" class="space-y-2 hidden">
+                        <input type="text" id="turno-curso" placeholder="Curso" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="text" id="turno-nivel" placeholder="Nivel" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="text" id="turno-docente" placeholder="Docente a cargo" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="number" id="turno-alumnos" placeholder="Cantidad de alumnos" class="w-full px-4 py-2 border rounded-lg">
+                    </div>
+                    <input type="number" id="turno-asistentes" placeholder="Cantidad de asistentes" class="w-full px-4 py-2 border rounded-lg" required>
+                    <select id="turno-slot" class="w-full px-4 py-2 border rounded-lg" required></select>
+                    <button type="submit" class="w-full brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800">Reservar</button>
+                </form>
+                <h4 class="text-xl font-bold brand-green">Mis Turnos Reservados</h4>
+                <div id="mis-turnos-list" class="space-y-4 mt-4"></div>
+            </div>
             
             <!-- News View -->
             <div id="view-news" class="hidden">
@@ -200,6 +222,7 @@
             <div class="mb-8 border-b border-gray-300">
                 <nav class="flex space-x-4" aria-label="Admin Tabs">
                     <button data-view="admin-courses" class="admin-tab-button px-4 py-2 font-medium border-b-4 brand-border-green brand-green">Gestionar Capacitaciones</button>
+                    <button data-view="admin-turnos" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Turnera</button>
                     <button data-view="admin-news" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Noticias</button>
                 </nav>
             </div>
@@ -207,6 +230,16 @@
             <div id="admin-courses-view">
                 <button id="add-course-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Crear Nueva Capacitación</button>
                 <div id="admin-courses-list" class="space-y-4"></div>
+            </div>
+            <!-- Admin Turnos View -->
+            <div id="admin-turnos-view" class="hidden">
+                <button id="add-slot-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Nuevo Turno</button>
+                <h4 class="text-xl font-bold brand-green mb-2">Turnos Habilitados</h4>
+                <div id="admin-turnos-list" class="space-y-4 mb-6"></div>
+                <h4 class="text-xl font-bold brand-green mb-2">Turnos Tomados</h4>
+                <div id="admin-turnos-reserved" class="space-y-4 mb-6"></div>
+                <h4 class="text-xl font-bold brand-green mb-2">Turnos Sin Tomar</h4>
+                <div id="admin-turnos-free" class="space-y-4"></div>
             </div>
             <!-- Admin News View -->
             <div id="admin-news-view" class="hidden">
@@ -250,6 +283,21 @@
                     <div class="flex justify-end space-x-4 mt-6">
                         <button type="button" id="cancel-news-form" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">Cancelar</button>
                         <button type="submit" class="brand-bg-green text-white font-bold py-2 px-6 rounded-lg">Guardar Noticia</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="slot-form-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl p-8 max-w-sm w-full">
+                <h3 id="slot-form-title" class="text-2xl font-bold mb-6 brand-green"></h3>
+                <form id="slot-form" class="space-y-4">
+                    <input type="hidden" id="slot-id">
+                    <input type="date" id="slot-date" class="w-full px-4 py-2 border rounded-lg" required>
+                    <input type="time" id="slot-time" class="w-full px-4 py-2 border rounded-lg" required>
+                    <div class="flex justify-end space-x-4 mt-6">
+                        <button type="button" id="cancel-slot-form" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">Cancelar</button>
+                        <button type="submit" class="brand-bg-green text-white font-bold py-2 px-6 rounded-lg">Guardar</button>
                     </div>
                 </form>
             </div>
@@ -397,8 +445,8 @@
         // --- DOM ELEMENTS ---
         const loadingSpinner = document.getElementById('loading-spinner');
         const sections = { login: document.getElementById('login-section'), register: document.getElementById('register-section'), main: document.getElementById('main-app-section'), admin: document.getElementById('admin-section') };
-        const views = { available: document.getElementById('view-available-courses'), calendar: document.getElementById('view-calendar'), myInscriptions: document.getElementById('view-my-inscriptions'), news: document.getElementById('view-news') };
-        const tabs = { available: document.getElementById('tab-available'), calendar: document.getElementById('tab-calendar'), myInscriptions: document.getElementById('tab-my-inscriptions'), news: document.getElementById('tab-news') };
+        const views = { available: document.getElementById('view-available-courses'), calendar: document.getElementById('view-calendar'), myInscriptions: document.getElementById('view-my-inscriptions'), turnos: document.getElementById('view-turnos'), news: document.getElementById('view-news') };
+        const tabs = { available: document.getElementById('tab-available'), calendar: document.getElementById('tab-calendar'), myInscriptions: document.getElementById('tab-my-inscriptions'), turnos: document.getElementById('tab-turnos'), news: document.getElementById('tab-news') };
         const userInfoDiv = document.getElementById('user-info');
         const welcomeMessage = document.getElementById('welcome-message');
         const courseFormModal = document.getElementById('course-form-modal');
@@ -409,10 +457,20 @@
         const surveyModal = document.getElementById('survey-modal');
         const courseMaterialsModal = document.getElementById('course-materials-modal');
         const courseMaterialsTitle = document.getElementById('course-materials-title');
-        const courseMaterialsLinks = document.getElementById('course-materials-links');
-        const adminPasswordModal = document.getElementById('admin-password-modal');
-        const confirmationModal = document.getElementById('confirmation-modal');
-        const myBadgesList = document.getElementById('my-badges-list');
+       const courseMaterialsLinks = document.getElementById('course-materials-links');
+       const adminPasswordModal = document.getElementById('admin-password-modal');
+       const confirmationModal = document.getElementById('confirmation-modal');
+       const myBadgesList = document.getElementById('my-badges-list');
+        const turnoForm = document.getElementById('turno-form');
+        const turnoSlotSelect = document.getElementById('turno-slot');
+        const misTurnosList = document.getElementById('mis-turnos-list');
+       const datosEscuelaDiv = document.getElementById('turno-datos-escuela');
+       const slotFormModal = document.getElementById('slot-form-modal');
+       const slotForm = document.getElementById('slot-form');
+       const adminTurnosList = document.getElementById('admin-turnos-list');
+       const adminTurnosReserved = document.getElementById('admin-turnos-reserved');
+       const adminTurnosFree = document.getElementById('admin-turnos-free');
+       const addSlotButton = document.getElementById('add-slot-button');
         
         // --- MOCK DATA (Only for first time setup) ---
         async function setupMockData() {
@@ -518,8 +576,14 @@
                             <p class="text-gray-700 whitespace-pre-wrap">${newsItem.content}</p>
                         </div>
                     `;
-                    newsListDiv.innerHTML += card;
+                newsListDiv.innerHTML += card;
                 });
+            });
+
+            const turnosRef = collection(db, 'artifacts', appId, 'public', 'data', 'turnos');
+            onSnapshot(turnosRef, () => {
+                loadAvailableTurnos();
+                if (currentUserId) loadUserTurnos();
             });
         }
         
@@ -555,6 +619,8 @@
             showSection('main');
             showView('available');
             await loadMyInscriptions();
+            await loadAvailableTurnos();
+            await loadUserTurnos();
         }
 
         function createCourseCard(course) {
@@ -773,8 +839,95 @@
             courseMaterialsModal.style.display = 'flex';
         }
 
+        // --- TURNOS FUNCTIONS ---
+        async function loadAvailableTurnos() {
+            turnoSlotSelect.innerHTML = '';
+            const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'));
+            const available = snapshot.docs.filter(d => !d.data().reserved).sort((a,b)=>{
+                const da = a.data(); const dbb = b.data();
+                return (da.date + da.time).localeCompare(dbb.date + dbb.time);
+            });
+            available.forEach(docSnap => {
+                const t = docSnap.data();
+                const option = document.createElement('option');
+                option.value = docSnap.id;
+                option.textContent = `${t.date} ${t.time}`;
+                turnoSlotSelect.appendChild(option);
+            });
+            if (available.length === 0) {
+                const opt = document.createElement('option');
+                opt.textContent = 'No hay turnos disponibles';
+                opt.disabled = true; opt.selected = true;
+                turnoSlotSelect.appendChild(opt);
+            }
+        }
+
+        async function loadUserTurnos() {
+            misTurnosList.innerHTML = '';
+            const ref = collection(db, 'artifacts', appId, 'users', currentUserId, 'turnos');
+            const snapshot = await getDocs(ref);
+            if (snapshot.empty) { misTurnosList.innerHTML = '<p>No tiene turnos reservados.</p>'; return; }
+            snapshot.forEach(async docSnap => {
+                const data = docSnap.data();
+                const slotSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'turnos', data.slotId));
+                if (!slotSnap.exists()) return;
+                const slot = slotSnap.data();
+                const cancelBtn = `<button data-slot="${docSnap.id}" class="cancel-turno-button bg-red-600 text-white p-2 rounded-lg text-sm">Cancelar</button>`;
+                misTurnosList.innerHTML += `<div class="bg-white p-4 rounded-lg shadow flex justify-between items-center"><span>${slot.date} ${slot.time} - ${data.institucion}</span>${cancelBtn}</div>`;
+            });
+            document.querySelectorAll('.cancel-turno-button').forEach(btn => btn.addEventListener('click', cancelTurno));
+        }
+
+        async function bookTurno(e) {
+            e.preventDefault();
+            if (!currentUserId) { showModal('Debe iniciar sesión'); return; }
+            const slotId = turnoSlotSelect.value;
+            if (!slotId) return;
+            loadingSpinner.style.display = 'flex';
+            try {
+                const slotRef = doc(db, 'artifacts', appId, 'public', 'data', 'turnos', slotId);
+                const slotSnap = await getDoc(slotRef);
+                if (!slotSnap.exists() || slotSnap.data().reserved) { showModal('El turno ya no está disponible'); return; }
+                const reserva = {
+                    slotId,
+                    institucion: document.getElementById('turno-institucion').value,
+                    direccion: document.getElementById('turno-direccion').value,
+                    esEscuela: document.getElementById('turno-es-escuela').checked,
+                    curso: document.getElementById('turno-curso').value,
+                    nivel: document.getElementById('turno-nivel').value,
+                    docente: document.getElementById('turno-docente').value,
+                    alumnos: document.getElementById('turno-alumnos').value,
+                    asistentes: document.getElementById('turno-asistentes').value,
+                    userId: currentUserId,
+                    dni: currentUser.dni,
+                    nombre: currentUser.name,
+                    email: currentUser.email,
+                    timestamp: new Date().toISOString()
+                };
+                await updateDoc(slotRef, { reserved: true, reservation: reserva });
+                await setDoc(doc(db, 'artifacts', appId, 'users', currentUserId, 'turnos', slotId), reserva);
+                turnoForm.reset();
+                datosEscuelaDiv.style.display = 'none';
+                showModal('Turno reservado. Recibirá un correo de confirmación.');
+            } catch(err) { console.error(err); showModal('No se pudo reservar el turno'); }
+            finally { loadingSpinner.style.display = 'none'; }
+        }
+
+        async function cancelTurno(e) {
+            const id = e.target.dataset.slot;
+            const slotRef = doc(db, 'artifacts', appId, 'public', 'data', 'turnos', id);
+            const slotSnap = await getDoc(slotRef);
+            if (!slotSnap.exists()) return;
+            const slot = slotSnap.data();
+            const slotDate = new Date(`${slot.date}T${slot.time}`);
+            if ((slotDate - new Date())/3600000 < 24) { showModal('No puede cancelar con menos de 24h de anticipación'); return; }
+            await updateDoc(slotRef, { reserved: false, reservation: null });
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUserId, 'turnos', id));
+            showModal('Turno cancelado');
+        }
+
         // --- ADMIN FUNCTIONS ---
-        function showAdminPanel() { isAdminLoggedIn = true; showSection('admin'); loadAdminCourses(); loadAdminNews(); }
+        function showAdminPanel() { isAdminLoggedIn = true; showSection('admin'); loadAdminCourses(); loadAdminNews(); loadAdminTurnos(); }
         function loadAdminCourses() {
             const adminCoursesListDiv = document.getElementById('admin-courses-list');
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), (snapshot) => {
@@ -957,6 +1110,90 @@
                 finally { loadingSpinner.style.display = 'none'; }
             });
         }
+
+        function loadAdminTurnos() {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), (snapshot) => {
+                adminTurnosList.innerHTML = '';
+                adminTurnosReserved.innerHTML = '';
+                adminTurnosFree.innerHTML = '';
+                snapshot.forEach(docSnap => {
+                    const t = { id: docSnap.id, ...docSnap.data() };
+                    const baseInfo = `${t.date} ${t.time}`;
+                    adminTurnosList.innerHTML += `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"><span>${baseInfo}${t.reserved ? ' - Reservado' : ''}</span><div class="flex space-x-2"><button data-slot-id="${t.id}" class="edit-slot-button bg-yellow-500 text-white p-2 rounded-lg text-sm">Editar</button><button data-slot-id="${t.id}" class="delete-slot-button bg-red-500 text-white p-2 rounded-lg text-sm">Eliminar</button></div></div>`;
+                    if (t.reserved && t.reservation) {
+                        const r = t.reservation;
+                        adminTurnosReserved.innerHTML += `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"><span>${baseInfo} - ${r.institucion}</span><button data-slot-id="${t.id}" class="admin-cancel-slot bg-red-600 text-white p-2 rounded-lg text-sm">Cancelar</button></div>`;
+                    } else {
+                        adminTurnosFree.innerHTML += `<div class="bg-white p-4 rounded-lg shadow-md">${baseInfo}</div>`;
+                    }
+                });
+                document.querySelectorAll('.edit-slot-button').forEach(b => b.onclick = (e) => openSlotForm(e.target.dataset.slotId));
+                document.querySelectorAll('.delete-slot-button').forEach(b => b.onclick = (e) => deleteSlot(e.target.dataset.slotId));
+                document.querySelectorAll('.admin-cancel-slot').forEach(b => b.onclick = (e) => cancelSlotAdmin(e.target.dataset.slotId));
+            });
+        }
+
+        function openSlotForm(slotId = null) {
+            slotForm.reset();
+            document.getElementById('slot-form-title').textContent = slotId ? 'Editar Turno' : 'Nuevo Turno';
+            if (slotId) {
+                getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'turnos', slotId)).then(snap => {
+                    if (snap.exists()) {
+                        const d = snap.data();
+                        document.getElementById('slot-id').value = slotId;
+                        document.getElementById('slot-date').value = d.date;
+                        document.getElementById('slot-time').value = d.time;
+                    }
+                });
+            } else { document.getElementById('slot-id').value = ''; }
+            slotFormModal.style.display = 'flex';
+        }
+
+        async function saveSlot(e) {
+            e.preventDefault();
+            loadingSpinner.style.display = 'flex';
+            const id = document.getElementById('slot-id').value;
+            const date = document.getElementById('slot-date').value;
+            const time = document.getElementById('slot-time').value;
+            try {
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('date','==', date));
+                const snapshot = await getDocs(q);
+                if (!id && snapshot.size >= 4) { showModal('Ya existen 4 turnos para ese día'); return; }
+                const data = { date, time, reserved: false };
+                if (id) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'turnos', id), data); }
+                else { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), data); }
+                slotFormModal.style.display = 'none';
+            } catch(err) { console.error(err); showModal('Error guardando turno'); }
+            finally { loadingSpinner.style.display = 'none'; }
+        }
+
+        function deleteSlot(slotId) {
+            showConfirmationModal('¿Eliminar turno?', async () => {
+                loadingSpinner.style.display = 'flex';
+                try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'turnos', slotId)); }
+                catch(err){ console.error(err); }
+                finally { loadingSpinner.style.display = 'none'; }
+            });
+        }
+
+        function cancelSlotAdmin(slotId) {
+            showConfirmationModal('¿Cancelar reserva de este turno?', async () => {
+                loadingSpinner.style.display = 'flex';
+                try {
+                    const slotRef = doc(db, 'artifacts', appId, 'public', 'data', 'turnos', slotId);
+                    const snap = await getDoc(slotRef);
+                    if (snap.exists() && snap.data().reserved) {
+                        const r = snap.data().reservation;
+                        await updateDoc(slotRef, { reserved: false, reservation: null });
+                        if (r && r.userId) {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'users', r.userId, 'turnos', slotId));
+                        }
+                        showModal('Reserva cancelada.');
+                    }
+                } catch(err) { console.error(err); showModal('No se pudo cancelar.'); }
+                finally { loadingSpinner.style.display = 'none'; }
+            });
+        }
         
         // --- EVENT LISTENERS ---
         document.getElementById('login-form').addEventListener('submit', (e) => { e.preventDefault(); attemptLogin(document.getElementById('dni-input').value); });
@@ -1000,6 +1237,7 @@
             document.querySelectorAll('.admin-tab-button').forEach(b => b.className = 'admin-tab-button px-4 py-2 font-medium text-gray-500');
             e.target.className = 'admin-tab-button px-4 py-2 font-medium border-b-4 brand-border-green brand-green';
             document.getElementById('admin-courses-view').style.display = e.target.dataset.view === 'admin-courses' ? 'block' : 'none';
+            document.getElementById('admin-turnos-view').style.display = e.target.dataset.view === 'admin-turnos' ? 'block' : 'none';
             document.getElementById('admin-news-view').style.display = e.target.dataset.view === 'admin-news' ? 'block' : 'none';
         }));
         document.getElementById('add-course-button').addEventListener('click', () => openCourseForm());
@@ -1008,6 +1246,11 @@
         document.getElementById('add-news-button').addEventListener('click', () => openNewsForm());
         document.getElementById('cancel-news-form').addEventListener('click', () => newsFormModal.style.display = 'none');
         newsForm.addEventListener('submit', saveNews);
+        addSlotButton.addEventListener('click', () => openSlotForm());
+        document.getElementById('cancel-slot-form').addEventListener('click', () => slotFormModal.style.display = 'none');
+        slotForm.addEventListener('submit', saveSlot);
+        turnoForm.addEventListener('submit', bookTurno);
+        document.getElementById('turno-es-escuela').addEventListener('change', e => { datosEscuelaDiv.style.display = e.target.checked ? 'block' : 'none'; });
         document.getElementById('close-enrolled-users-modal').addEventListener('click', () => enrolledUsersModal.style.display = 'none');
         document.getElementById('close-course-materials-modal').addEventListener('click', () => courseMaterialsModal.style.display = 'none');
         document.getElementById('cancel-confirmation-button').addEventListener('click', () => { confirmationModal.style.display = 'none'; actionToConfirm = null; });
