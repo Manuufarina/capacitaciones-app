@@ -288,6 +288,16 @@
                     </div>
                 </form>
             </div>
+</div>
+
+        <div id="course-materials-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl p-8 max-w-lg w-full">
+                <h3 id="course-materials-title" class="text-2xl font-bold mb-6 brand-green"></h3>
+                <div id="course-materials-links" class="space-y-2"></div>
+                <div class="flex justify-end mt-6">
+                    <button type="button" id="close-course-materials-modal" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">Cerrar</button>
+                </div>
+            </div>
         </div>
 
         <!-- Admin Password Modal -->
@@ -396,6 +406,9 @@
         const newsForm = document.getElementById('news-form');
         const enrolledUsersModal = document.getElementById('enrolled-users-modal');
         const surveyModal = document.getElementById('survey-modal');
+        const courseMaterialsModal = document.getElementById('course-materials-modal');
+        const courseMaterialsTitle = document.getElementById('course-materials-title');
+        const courseMaterialsLinks = document.getElementById('course-materials-links');
         const adminPasswordModal = document.getElementById('admin-password-modal');
         const confirmationModal = document.getElementById('confirmation-modal');
         const myBadgesList = document.getElementById('my-badges-list');
@@ -613,6 +626,9 @@
                             materialsHTML = `<div class="mt-4 p-4 brand-bg-light-green rounded-lg"><h5 class="font-bold mb-2">Material de Cursada</h5>${links}</div>`;
                         }
                         let actionsHTML = '';
+                        if(course.materials && course.materials.length > 0) {
+                            actionsHTML += `<button data-course-id="${enrollment.id}" class="view-materials-button bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm mr-2">Ver Archivos</button>`;
+                        }
                         if (enrollment.status === 'finalizado') {
                             completedCoursesCount++;
                             actionsHTML += `<button data-course-name="${course.title}" data-completion-date="${enrollment.completionDate}" class="download-cert-button bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm">Descargar Certificado</button>`;
@@ -627,6 +643,7 @@
                 renderBadges(userProfileSnap.data().badges || []);
                 document.querySelectorAll('.download-cert-button').forEach(b => b.addEventListener('click', generateCertificate));
                 document.querySelectorAll('.open-survey-button').forEach(b => b.addEventListener('click', (e) => openSurvey(e.target.dataset.courseId)));
+                document.querySelectorAll('.view-materials-button').forEach(b => b.addEventListener('click', (e) => openCourseMaterials(e.target.dataset.courseId)));
             });
         }
         
@@ -720,6 +737,16 @@
                 star.className = 'text-gray-400';
                 star.onclick = () => { stars.forEach((s, i) => { s.textContent = i <= index ? '★' : '☆'; s.className = i <= index ? 'text-yellow-400' : 'text-gray-400'; }); };
             });
+        }
+
+        // --- MATERIALS FUNCTIONS ---
+        async function openCourseMaterials(courseId) {
+            const courseSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId));
+            if (!courseSnap.exists()) return;
+            const course = courseSnap.data();
+            courseMaterialsTitle.textContent = `Material de "${course.title}"`;
+            courseMaterialsLinks.innerHTML = (course.materials || []).map(link => `<a href="${link}" target="_blank" class="text-blue-600 hover:underline block">${link}</a>`).join('');
+            courseMaterialsModal.style.display = 'flex';
         }
 
         // --- ADMIN FUNCTIONS ---
@@ -958,6 +985,7 @@
         document.getElementById('cancel-news-form').addEventListener('click', () => newsFormModal.style.display = 'none');
         newsForm.addEventListener('submit', saveNews);
         document.getElementById('close-enrolled-users-modal').addEventListener('click', () => enrolledUsersModal.style.display = 'none');
+        document.getElementById('close-course-materials-modal').addEventListener('click', () => courseMaterialsModal.style.display = 'none');
         document.getElementById('cancel-confirmation-button').addEventListener('click', () => { confirmationModal.style.display = 'none'; actionToConfirm = null; });
         document.getElementById('confirm-action-button').addEventListener('click', () => { if (typeof actionToConfirm === 'function') { actionToConfirm(); } confirmationModal.style.display = 'none'; actionToConfirm = null; });
 
