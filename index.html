@@ -12,6 +12,8 @@
     <!-- jsPDF and html2canvas for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -242,10 +244,17 @@
             <!-- Admin Tabs -->
             <div class="mb-8 border-b border-gray-300">
                 <nav class="flex space-x-4" aria-label="Admin Tabs">
+                    <button data-view="admin-dashboard" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Dashboard</button>
                     <button data-view="admin-courses" class="admin-tab-button px-4 py-2 font-medium border-b-4 brand-border-green brand-green">Gestionar Capacitaciones</button>
                     <button data-view="admin-turnos" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Turnera</button>
                     <button data-view="admin-news" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Noticias</button>
+                    <button data-view="admin-enrollments" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Inscriptos</button>
                 </nav>
+            </div>
+            <!-- Admin Dashboard View -->
+            <div id="admin-dashboard-view" class="hidden">
+                <div id="dashboard-stats" class="mb-6"></div>
+                <canvas id="enroll-chart" class="w-full max-w-3xl mx-auto"></canvas>
             </div>
             <!-- Admin Courses View -->
             <div id="admin-courses-view">
@@ -266,6 +275,23 @@
             <div id="admin-news-view" class="hidden">
                 <button id="add-news-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Crear Nueva Noticia</button>
                 <div id="admin-news-list" class="space-y-4"></div>
+            </div>
+            <!-- Admin Enrollments View -->
+            <div id="admin-enrollments-view" class="hidden">
+                <h4 class="text-xl font-bold brand-green mb-4">Listado General de Inscriptos</h4>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg shadow">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-4 py-2 text-left">Nombre</th>
+                                <th class="px-4 py-2 text-left">Institución</th>
+                                <th class="px-4 py-2 text-left">Huerta/Compostera</th>
+                                <th class="px-4 py-2 text-left">Capacitación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="enrollments-table-body"></tbody>
+                    </table>
+                </div>
             </div>
         </main>
 
@@ -470,6 +496,7 @@
         let allCourses = []; // Cache for calendar
         let userEnrollments = {}; // Track user enrollments
         let actionToConfirm = null; // For confirmation modal
+        let enrollChart = null;
 
         // --- DOM ELEMENTS ---
         const loadingSpinner = document.getElementById('loading-spinner');
@@ -492,7 +519,7 @@
        const myBadgesList = document.getElementById('my-badges-list');
         const turnoForm = document.getElementById('turno-form');
         const turnoSlotSelect = document.getElementById('turno-slot');
-        const misTurnosList = document.getElementById('mis-turnos-list');
+       const misTurnosList = document.getElementById('mis-turnos-list');
        const datosEscuelaDiv = document.getElementById('turno-datos-escuela');
        const slotFormModal = document.getElementById('slot-form-modal');
        const slotForm = document.getElementById('slot-form');
@@ -500,6 +527,8 @@
        const adminTurnosReserved = document.getElementById('admin-turnos-reserved');
        const adminTurnosFree = document.getElementById('admin-turnos-free');
        const addSlotButton = document.getElementById('add-slot-button');
+       const dashboardStats = document.getElementById('dashboard-stats');
+       const enrollmentsTableBody = document.getElementById('enrollments-table-body');
         
         // --- MOCK DATA (Only for first time setup) ---
         async function setupMockData() {
@@ -992,7 +1021,7 @@
         }
 
         // --- ADMIN FUNCTIONS ---
-        function showAdminPanel() { isAdminLoggedIn = true; showSection('admin'); loadAdminCourses(); loadAdminNews(); loadAdminTurnos(); }
+        function showAdminPanel() { isAdminLoggedIn = true; showSection('admin'); loadAdminCourses(); loadAdminNews(); loadAdminTurnos(); loadAdminDashboard(); }
         function loadAdminCourses() {
             const adminCoursesListDiv = document.getElementById('admin-courses-list');
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), (snapshot) => {
@@ -1268,6 +1297,52 @@
                 finally { loadingSpinner.style.display = 'none'; }
             });
         }
+
+        async function loadAdminDashboard() {
+            dashboardStats.innerHTML = '';
+            const coursesSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses'));
+            const courseLabels = [];
+            const enrollCounts = [];
+            let totalEnrollments = 0;
+            for (const docSnap of coursesSnap.docs) {
+                courseLabels.push(docSnap.data().title);
+                const enrolledSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses', docSnap.id, 'enrolledUsers'));
+                enrollCounts.push(enrolledSnap.size);
+                totalEnrollments += enrolledSnap.size;
+            }
+            const turnosSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'));
+            const schools = new Set();
+            let reservedCount = 0;
+            turnosSnap.forEach(t => { const d = t.data(); if (d.reserved && d.reservation) { reservedCount++; if (d.reservation.esEscuela) schools.add(d.reservation.institucion); } });
+            dashboardStats.innerHTML = `
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-lg shadow"><p class="text-lg font-bold brand-green">${coursesSnap.size}</p><p class="text-sm text-gray-600">Capacitaciones</p></div>
+                    <div class="bg-white p-4 rounded-lg shadow"><p class="text-lg font-bold brand-green">${totalEnrollments}</p><p class="text-sm text-gray-600">Inscriptos</p></div>
+                    <div class="bg-white p-4 rounded-lg shadow"><p class="text-lg font-bold brand-green">${schools.size}</p><p class="text-sm text-gray-600">Escuelas registradas</p></div>
+                    <div class="bg-white p-4 rounded-lg shadow"><p class="text-lg font-bold brand-green">${reservedCount}</p><p class="text-sm text-gray-600">Turnos reservados</p></div>
+                </div>`;
+            if (enrollChart) enrollChart.destroy();
+            const ctx = document.getElementById('enroll-chart').getContext('2d');
+            enrollChart = new Chart(ctx, { type: 'bar', data: { labels: courseLabels, datasets: [{ label: 'Inscriptos', data: enrollCounts, backgroundColor: '#065f46' }] }, options: { plugins: { legend: { display: false } } } });
+        }
+
+        async function loadAdminEnrollments() {
+            enrollmentsTableBody.innerHTML = '';
+            const coursesSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses'));
+            for (const courseDoc of coursesSnap.docs) {
+                const courseTitle = courseDoc.data().title;
+                const enrolledSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses', courseDoc.id, 'enrolledUsers'));
+                for (const userDoc of enrolledSnap.docs) {
+                    const uid = userDoc.id;
+                    let userData = null;
+                    try { const uSnap = await getDoc(doc(db, 'artifacts', appId, 'users', uid)); if (uSnap.exists()) userData = uSnap.data(); } catch(err) {}
+                    const name = userData ? userData.name : userDoc.data().name;
+                    const institucion = userData ? userData.address || '' : '';
+                    const huerta = userData ? (userData.hasHuerta ? 'Sí' : 'No') : '';
+                    enrollmentsTableBody.innerHTML += `<tr class="border-t"><td class="px-4 py-2">${name}</td><td class="px-4 py-2">${institucion}</td><td class="px-4 py-2">${huerta}</td><td class="px-4 py-2">${courseTitle}</td></tr>`;
+                }
+            }
+        }
         
         // --- EVENT LISTENERS ---
         document.getElementById('login-form').addEventListener('submit', (e) => { e.preventDefault(); attemptLogin(document.getElementById('dni-input').value); });
@@ -1310,9 +1385,13 @@
         document.querySelectorAll('.admin-tab-button').forEach(button => button.addEventListener('click', (e) => {
             document.querySelectorAll('.admin-tab-button').forEach(b => b.className = 'admin-tab-button px-4 py-2 font-medium text-gray-500');
             e.target.className = 'admin-tab-button px-4 py-2 font-medium border-b-4 brand-border-green brand-green';
+            document.getElementById('admin-dashboard-view').style.display = e.target.dataset.view === 'admin-dashboard' ? 'block' : 'none';
             document.getElementById('admin-courses-view').style.display = e.target.dataset.view === 'admin-courses' ? 'block' : 'none';
             document.getElementById('admin-turnos-view').style.display = e.target.dataset.view === 'admin-turnos' ? 'block' : 'none';
             document.getElementById('admin-news-view').style.display = e.target.dataset.view === 'admin-news' ? 'block' : 'none';
+            document.getElementById('admin-enrollments-view').style.display = e.target.dataset.view === 'admin-enrollments' ? 'block' : 'none';
+            if(e.target.dataset.view === 'admin-dashboard') loadAdminDashboard();
+            if(e.target.dataset.view === 'admin-enrollments') loadAdminEnrollments();
         }));
         document.getElementById('add-course-button').addEventListener('click', () => openCourseForm());
         document.getElementById('cancel-course-form').addEventListener('click', () => courseFormModal.style.display = 'none');
