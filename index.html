@@ -64,15 +64,15 @@
         .calendar-day.other-month {
             background-color: #f9fafb;
         }
-        .calendar-event-dot {
-            position: absolute;
-            bottom: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #10b981; /* Emerald 500 */
+        .calendar-event {
+            margin-top: 2px;
+            background-color: #d1fae5; /* Emerald 200 */
+            padding: 2px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -849,7 +849,12 @@
                 const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const coursesOnThisDay = events.filter(c => c.date === currentDateStr);
                 if (coursesOnThisDay.length > 0) {
-                    dayEl.innerHTML += `<div class="calendar-event-dot"></div>`;
+                    coursesOnThisDay.forEach(ev => {
+                        const evDiv = document.createElement('div');
+                        evDiv.className = 'calendar-event';
+                        evDiv.textContent = ev.title + (ev.infoOnly ? ' (informativo)' : '');
+                        dayEl.appendChild(evDiv);
+                    });
                     dayEl.style.cursor = 'pointer';
                     dayEl.onclick = () => {
                         const courseTitles = coursesOnThisDay.map(c => `- ${c.title}${c.infoOnly ? ' (informativo)' : ''}`).join('\n');
