@@ -577,6 +577,17 @@
             document.getElementById('message-modal').style.display = 'flex';
         }
 
+
+        async function sendEmail(to, subject, text){
+            try {
+                await fetch("/api/send-email", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ to, subject, text })
+                });
+            } catch(e){ console.error("email", e); }
+        }
+
         function showConfirmationModal(message, onConfirm) {
             document.getElementById('confirmation-message').textContent = message;
             actionToConfirm = onConfirm;
@@ -761,14 +772,18 @@
                 if (course.capacity > 0 && enrolledSnap.size >= course.capacity) {
                     if (course.waitlist) {
                         await setDoc(doc(waitlistedUsersRef, currentUserId), { name: currentUser.name, dni: currentUser.dni, email: currentUser.email, timestamp: new Date() });
-                        showModal(`El cupo está lleno. Has sido añadido a la lista de espera para "${courseTitle}".`, true);
+                        const msgWait = `El cupo está lleno. Has sido añadido a la lista de espera para "${courseTitle}".`;
+                        sendEmail(currentUser.email, 'Lista de espera', msgWait);
+                        showModal(msgWait);
                     } else { showModal(`Lo sentimos, el cupo para "${courseTitle}" está completo.`); }
                 } else {
                     const batch = writeBatch(db);
                     batch.set(doc(enrolledUsersRef, currentUserId), { name: currentUser.name, dni: currentUser.dni, email: currentUser.email, status: 'inscripto' });
                     batch.set(doc(db, 'artifacts', appId, 'users', currentUserId, 'enrollments', courseId), { status: 'inscripto', completionDate: null, surveyCompleted: false });
                     await batch.commit();
-                    showModal(`¡Inscripción exitosa a "${courseTitle}"!`, true);
+                    const msgEnroll = `¡Inscripción exitosa a "${courseTitle}"!`;
+                    sendEmail(currentUser.email, 'Inscripción confirmada', msgEnroll);
+                    showModal(msgEnroll);
                 }
                 loadMyInscriptions();
             } catch (error) {
@@ -1023,7 +1038,9 @@
                 await setDoc(doc(db, 'artifacts', appId, 'users', currentUserId, 'turnos', slotId), reserva);
                 turnoForm.reset();
                 datosEscuelaDiv.style.display = 'none';
-                showModal('Se envió un correo de confirmación. Recibirá un recordatorio el día anterior y un mail de agradecimiento.', true);
+                const msgTurno = 'Se envió un correo de confirmación. Recibirá un recordatorio el día anterior y un mail de agradecimiento.';
+                sendEmail(currentUser.email, 'Turno confirmado', msgTurno);
+                showModal(msgTurno);
             } catch(err) { console.error(err); showModal('No se pudo reservar el turno'); }
             finally { loadingSpinner.style.display = 'none'; }
         }
@@ -1148,7 +1165,9 @@
                     const currentBadges = userProfileSnap.data().badges || [];
                     if (!currentBadges.includes(badge)) { batch.update(userProfileRef, { badges: [...currentBadges, badge] }); }
                     await batch.commit();
-                    showModal(`Usuario ${userName} marcado como finalizado.`, true);
+                    const msgFinal = `Usuario ${userName} marcado como finalizado.`;
+                    sendEmail(userProfileSnap.data().email, 'Curso finalizado', msgFinal);
+                    showModal(msgFinal);
                 } catch (error) { console.error("Error marking as complete:", error); }
                 finally { loadingSpinner.style.display = 'none'; }
             });
@@ -1361,7 +1380,10 @@ function cancelSlotAdmin(slotId) {
                         if (r && r.userId) {
                             await deleteDoc(doc(db, 'artifacts', appId, 'users', r.userId, 'turnos', slotId));
                         }
-                        showModal('Reserva cancelada. Se envió un correo informando la cancelación.', true);
+                        const msgCancel = 'Reserva cancelada. Se envió un correo informando la cancelación.';
+                        const dest = (r && r.contactoEmail) ? r.contactoEmail : r.email;
+                        if (dest) sendEmail(dest, 'Turno cancelado', msgCancel);
+                        showModal(msgCancel);
                     }
                 } catch(err) { console.error(err); showModal('No se pudo cancelar.'); }
                 finally { loadingSpinner.style.display = 'none'; }
