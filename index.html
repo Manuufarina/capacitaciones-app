@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subsecretaría de Ambiente - Municipalidad de San Isidro</title>
-    <meta name="description" content="Plataforma de gestión de capacitaciones ambientales de la Municipalidad de San Isidro">
+    <title>Dirección de Ambiente - Municipalidad de San Isidro</title>
+    <meta name="description" content="Plataforma de gestión de eventos ambientales de la Municipalidad de San Isidro">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -86,7 +86,7 @@
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-4">
                     <img src="https://drive.google.com/uc?export=download&id=1BXBBYqL3uDoPXd4i9jdRu1gFnA2McZpj" alt="Logo Municipalidad de San Isidro" class="h-12 md:h-16" onerror="this.style.display='none'">
-                    <h1 class="text-lg md:text-2xl font-bold brand-green">Subsecretaría de Ambiente</h1>
+                    <h1 class="text-lg md:text-2xl font-bold brand-green">Dirección de Ambiente</h1>
                 </div>
                 <div class="flex items-center space-x-4">
                     <div id="user-info" class="hidden text-right">
@@ -106,7 +106,7 @@
         <!-- Login Section -->
         <main id="login-section" class="section container mx-auto p-4 md:p-8 text-center">
             <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-bold mb-6 brand-green">Acceso a Capacitaciones</h2>
+                <h2 class="text-2xl font-bold mb-6 brand-green">Acceso a Eventos</h2>
                 <p class="mb-6 text-gray-600">Por favor, ingrese su DNI para continuar. Si es su primer ingreso, se le pedirá que complete sus datos.</p>
                 <form id="login-form">
                     <input type="number" id="dni-input" placeholder="Ingrese su DNI sin puntos" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" required>
@@ -146,11 +146,11 @@
             <!-- Navigation Tabs -->
             <div class="mb-8 border-b border-gray-300">
                 <nav class="flex space-x-2 md:space-x-4" aria-label="Tabs">
-                    <button id="tab-available" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg border-b-4 brand-border-green brand-green">Capacitaciones</button>
-                    <button id="tab-calendar" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Calendario</button>
-                    <button id="tab-my-inscriptions" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Mis Inscripciones</button>
-                    <button id="tab-turnos" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Turnos Charlas</button>
                     <button id="tab-news" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Noticias</button>
+                    <button id="tab-calendar" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Calendario</button>
+                    <button id="tab-turnos" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Turnos ECOescuelas</button>
+                    <button id="tab-available" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg border-b-4 brand-border-green brand-green">Eventos</button>
+                    <button id="tab-my-inscriptions" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Mis Inscripciones</button>
                 </nav>
             </div>
             <div id="ecoescuelas-link" class="hidden mb-4 p-4 bg-yellow-100 rounded-lg text-center">
@@ -159,7 +159,7 @@
 
             <!-- Available Courses View -->
             <div id="view-available-courses">
-                <h3 class="text-3xl font-bold mb-6 brand-green">Próximas Capacitaciones</h3>
+                    <h3 class="text-3xl font-bold mb-6 brand-green">Próximos Eventos</h3>
                 <div id="courses-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
             </div>
 
@@ -183,7 +183,7 @@
                  <div class="mb-8 p-4 bg-white rounded-lg shadow">
                      <h4 class="font-bold text-xl brand-green mb-3">Mis Insignias de Vecino/a Sustentable</h4>
                      <div id="my-badges-list" class="flex flex-wrap gap-4">
-                         <p class="text-gray-500">Completa capacitaciones para ganar insignias.</p>
+                         <p class="text-gray-500">Completa eventos para ganar insignias.</p>
                      </div>
                  </div>
                  <div id="my-inscriptions-list" class="space-y-6"></div>
@@ -191,11 +191,12 @@
 
             <!-- Turnos View -->
             <div id="view-turnos" class="hidden">
-                <h3 class="text-3xl font-bold mb-6 brand-green">Reservar Turno para Charlas</h3>
+                <h3 class="text-3xl font-bold mb-6 brand-green">Reservar turno ECOescuelas</h3>
                 <form id="turno-form" class="space-y-4 mb-8">
                     <input type="text" id="turno-institucion" placeholder="Nombre de la institución" class="w-full px-4 py-2 border rounded-lg" required>
                     <input type="text" id="turno-direccion" placeholder="Dirección (calle, número y barrio)" class="w-full px-4 py-2 border rounded-lg" required>
                     <label class="flex items-center space-x-2"><input type="checkbox" id="turno-es-escuela"><span>¿Es escuela?</span></label>
+                    <p id="escuela-note" class="text-sm text-gray-600 hidden">Pueden haber hasta 6 talleres anuales por escuela.</p>
                     <div id="turno-datos-escuela" class="space-y-2 hidden">
                         <select id="turno-tipo" class="w-full px-4 py-2 border rounded-lg">
                             <option value="publica">Institución pública</option>
@@ -216,10 +217,10 @@
                             <option value="Cambio Climático: Energía">Cambio Climático: Energía</option>
                         </select>
                         <input type="text" id="turno-referente" placeholder="Nombre del referente a cargo" class="w-full px-4 py-2 border rounded-lg">
-                        <input type="text" id="turno-telefono" placeholder="Teléfono de contacto" class="w-full px-4 py-2 border rounded-lg">
-                        <input type="email" id="turno-email" placeholder="Mail de contacto" class="w-full px-4 py-2 border rounded-lg">
                         <textarea id="turno-observaciones" placeholder="Observaciones (opcional)" class="w-full px-4 py-2 border rounded-lg"></textarea>
                     </div>
+                    <input type="text" id="turno-telefono" placeholder="Teléfono de contacto" class="w-full px-4 py-2 border rounded-lg" required>
+                    <input type="email" id="turno-email" placeholder="Mail de contacto" class="w-full px-4 py-2 border rounded-lg" required>
                     <input type="number" id="turno-asistentes" placeholder="Cantidad de asistentes" class="w-full px-4 py-2 border rounded-lg" required>
                     <select id="turno-slot" class="w-full px-4 py-2 border rounded-lg" required></select>
                     <button type="submit" class="w-full brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800">Reservar</button>
@@ -245,7 +246,7 @@
             <div class="mb-8 border-b border-gray-300">
                 <nav class="flex space-x-4" aria-label="Admin Tabs">
                     <button data-view="admin-dashboard" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Dashboard</button>
-                    <button data-view="admin-courses" class="admin-tab-button px-4 py-2 font-medium border-b-4 brand-border-green brand-green">Gestionar Capacitaciones</button>
+                    <button data-view="admin-courses" class="admin-tab-button px-4 py-2 font-medium border-b-4 brand-border-green brand-green">Gestionar Eventos</button>
                     <button data-view="admin-turnos" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Turnera</button>
                     <button data-view="admin-news" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Noticias</button>
                     <button data-view="admin-enrollments" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Inscriptos</button>
@@ -258,15 +259,21 @@
             </div>
             <!-- Admin Courses View -->
             <div id="admin-courses-view">
-                <button id="add-course-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Crear Nueva Capacitación</button>
+                <button id="add-course-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Crear Nuevo Evento</button>
                 <div id="admin-courses-list" class="space-y-4"></div>
             </div>
             <!-- Admin Turnos View -->
             <div id="admin-turnos-view" class="hidden">
                 <button id="add-slot-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Nuevo Turno</button>
+                <button id="generate-month-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Cargar Mes</button>
                 <h4 class="text-xl font-bold brand-green mb-2">Turnos Habilitados</h4>
                 <div id="admin-turnos-list" class="space-y-4 mb-6"></div>
-                <h4 class="text-xl font-bold brand-green mb-2">Turnos Tomados</h4>
+                <div class="flex items-end space-x-2 mb-2">
+                    <h4 class="text-xl font-bold brand-green">Turnos Tomados</h4>
+                    <input type="date" id="export-start" class="border px-2 py-1 rounded" />
+                    <input type="date" id="export-end" class="border px-2 py-1 rounded" />
+                    <button id="export-turnos" class="bg-blue-600 text-white px-2 py-1 rounded text-sm">Descargar CSV</button>
+                </div>
                 <div id="admin-turnos-reserved" class="space-y-4 mb-6"></div>
                 <h4 class="text-xl font-bold brand-green mb-2">Turnos Sin Tomar</h4>
                 <div id="admin-turnos-free" class="space-y-4"></div>
@@ -286,7 +293,7 @@
                                 <th class="px-4 py-2 text-left">Nombre</th>
                                 <th class="px-4 py-2 text-left">Institución</th>
                                 <th class="px-4 py-2 text-left">Huerta/Compostera</th>
-                                <th class="px-4 py-2 text-left">Capacitación</th>
+                                <th class="px-4 py-2 text-left">Evento</th>
                             </tr>
                         </thead>
                         <tbody id="enrollments-table-body"></tbody>
@@ -434,7 +441,7 @@
             <div id="certificate-template">
                 <div class="text-center mb-8">
                     <img src="https://www.sanisidro.gob.ar/sites/default/files/logo_msi_horizontal_0.png" alt="Logo" class="h-20 mx-auto mb-4">
-                    <h1 class="text-3xl font-bold" style="color: #065f46;">Subsecretaría de Ambiente</h1>
+                    <h1 class="text-3xl font-bold" style="color: #065f46;">Dirección de Ambiente</h1>
                     <h2 class="text-2xl" style="color: #065f46;">Municipalidad de San Isidro</h2>
                 </div>
                 <div class="text-center my-12">
@@ -446,7 +453,7 @@
                     <p id="cert-user-name" class="text-3xl font-semibold border-b-2 border-gray-400 pb-2 inline-block"></p>
                 </div>
                 <div class="text-center text-lg my-8">
-                    <p>Por haber participado y finalizado satisfactoriamente la capacitación de:</p>
+                    <p>Por haber participado y finalizado satisfactoriamente el evento de:</p>
                     <p id="cert-course-name" class="text-2xl font-bold my-4" style="color: #065f46;"></p>
                 </div>
                 <div class="text-center mt-16 text-base">
@@ -494,6 +501,7 @@
         let isAdminLoggedIn = false;
         let currentCalendarDate = new Date();
         let allCourses = []; // Cache for calendar
+        let allEfemerides = [];
         let userEnrollments = {}; // Track user enrollments
         let actionToConfirm = null; // For confirmation modal
         let enrollChart = null;
@@ -527,6 +535,7 @@
        const adminTurnosReserved = document.getElementById('admin-turnos-reserved');
        const adminTurnosFree = document.getElementById('admin-turnos-free');
        const addSlotButton = document.getElementById('add-slot-button');
+       const generateMonthButton = document.getElementById('generate-month-button');
        const dashboardStats = document.getElementById('dashboard-stats');
        const enrollmentsTableBody = document.getElementById('enrollments-table-body');
         
@@ -556,6 +565,7 @@
              if(views[viewName]) {
                  views[viewName].style.display = 'block';
                  tabs[viewName].className = 'tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg border-b-4 brand-border-green brand-green';
+                 document.getElementById('ecoescuelas-link').style.display = viewName === 'turnos' ? 'block' : 'none';
              }
         }
         
@@ -621,6 +631,13 @@
                 updateCourseCards();
             });
 
+            const efeRef = collection(db, 'artifacts', appId, 'public', 'data', 'efemerides');
+            onSnapshot(efeRef, (snapshot) => {
+                allEfemerides = [];
+                snapshot.forEach(doc => { allEfemerides.push(doc.data()); });
+                renderCalendar();
+            });
+
             const newsRef = collection(db, 'artifacts', appId, 'public', 'data', 'news');
             onSnapshot(query(newsRef, orderBy("date", "desc")), (snapshot) => {
                 const newsListDiv = document.getElementById('news-list');
@@ -683,7 +700,6 @@
         async function showMainApp() {
             welcomeMessage.textContent = `Bienvenido/a, ${currentUser.name.split(' ')[0]}`;
             userInfoDiv.style.display = 'block';
-            document.getElementById('ecoescuelas-link').style.display = 'block';
             showSection('main');
             showView('available');
             await loadMyInscriptions();
@@ -732,7 +748,7 @@
             const { courseId, courseTitle } = event.target.dataset;
             const courseRef = doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId);
             const courseSnap = await getDoc(courseRef);
-            if (!courseSnap.exists()) { showModal("Esta capacitación ya no existe."); return; }
+            if (!courseSnap.exists()) { showModal("Este evento ya no existe."); return; }
             const course = courseSnap.data();
             const enrolledUsersRef = collection(courseRef, 'enrolledUsers');
             const waitlistedUsersRef = collection(courseRef, 'waitlistedUsers');
@@ -766,7 +782,7 @@
             if (!currentUserId) return;
             const enrollmentsRef = collection(db, 'artifacts', appId, 'users', currentUserId, 'enrollments');
             onSnapshot(enrollmentsRef, async (snapshot) => {
-                if (snapshot.empty) { inscriptionsListDiv.innerHTML = '<p>Aún no se ha inscripto a ninguna capacitación.</p>'; userEnrollments = {}; updateCourseCards(); renderBadges([]); return; }
+                if (snapshot.empty) { inscriptionsListDiv.innerHTML = '<p>Aún no se ha inscripto a ningún evento.</p>'; userEnrollments = {}; updateCourseCards(); renderBadges([]); return; }
                 inscriptionsListDiv.innerHTML = '';
                 userEnrollments = {};
                 let completedCoursesCount = 0;
@@ -841,7 +857,7 @@
             for (let i = 0; i < startDayOfWeek; i++) { calendarBody.innerHTML += `<div class="calendar-day other-month"></div>`; }
             const cleanupDay = getFirstSaturday(year, month);
             const cleanupDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(cleanupDay).padStart(2, '0')}`;
-            const events = allCourses.concat([{ title: 'Limpieza del río en la reserva', date: cleanupDateStr, infoOnly: true }]);
+            const events = allCourses.concat(allEfemerides).concat([{ title: 'Limpieza del río en la reserva', date: cleanupDateStr, infoOnly: true }]);
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
                 dayEl.className = 'calendar-day';
@@ -873,7 +889,7 @@
         };
         function renderBadges(userBadges = []) {
             myBadgesList.innerHTML = '';
-            if (userBadges.length === 0) { myBadgesList.innerHTML = '<p class="text-gray-500">Completa capacitaciones para ganar insignias.</p>'; return; }
+            if (userBadges.length === 0) { myBadgesList.innerHTML = '<p class="text-gray-500">Completa eventos para ganar insignias.</p>'; return; }
             userBadges.forEach(badgeName => { myBadgesList.innerHTML += badgeSVGs[badgeName] || badgeSVGs.default; });
         }
         
@@ -1042,7 +1058,7 @@
         }
         function openCourseForm(courseId = null) {
             courseForm.reset();
-            document.getElementById('course-form-title').textContent = courseId ? "Editar Capacitación" : "Crear Capacitación";
+            document.getElementById('course-form-title').textContent = courseId ? "Editar Evento" : "Crear Evento";
             if (courseId) {
                 getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId)).then(docSnap => {
                     if (docSnap.exists()) {
@@ -1082,19 +1098,19 @@
             try {
                 if (courseId) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId), courseData); } 
                 else { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), courseData); }
-                showModal("Capacitación guardada.");
+                showModal("Evento guardado.");
                 courseFormModal.style.display = 'none';
             } catch (error) { console.error("Error saving course:", error); showModal("Error al guardar."); }
             finally { loadingSpinner.style.display = 'none'; }
         }
         
         function deleteCourse(courseId, courseTitle) {
-            showConfirmationModal(`¿Está seguro que desea eliminar la capacitación "${courseTitle}"? Esta acción no se puede deshacer.`, async () => {
+            showConfirmationModal(`¿Está seguro que desea eliminar el evento "${courseTitle}"? Esta acción no se puede deshacer.`, async () => {
                 loadingSpinner.style.display = 'flex';
                 try {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId));
-                    showModal("Capacitación eliminada.");
-                } catch (error) { console.error("Error deleting course:", error); showModal("Error al eliminar la capacitación."); }
+                    showModal("Evento eliminado.");
+                } catch (error) { console.error("Error deleting course:", error); showModal("Error al eliminar el evento."); }
                 finally { loadingSpinner.style.display = 'none'; }
             });
         }
@@ -1149,6 +1165,26 @@
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
             link.setAttribute("download", `inscriptos_${courseTitle.replace(/\s/g, '_')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function exportTurnosCSV(startDate, endDate) {
+            const qSnapshot = await getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('reserved', '==', true)));
+            let csv = 'data:text/csv;charset=utf-8,Fecha,Hora,Institucion,Direccion,Telefono,Email,Alumnos,Asistentes\r\n';
+            qSnapshot.forEach(docSnap => {
+                const t = docSnap.data();
+                const r = t.reservation;
+                if (!r) return;
+                const ts = r.timestamp || '';
+                if (startDate && ts < startDate) return;
+                if (endDate && ts > endDate + 'T23:59') return;
+                csv += `${t.date},${t.time},"${r.institucion}","${r.direccion}","${r.telefono}","${r.contactoEmail}",${r.alumnos || ''},${r.asistentes}\r\n`;
+            });
+            const link = document.createElement('a');
+            link.setAttribute('href', encodeURI(csv));
+            link.setAttribute('download', 'turnos.csv');
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1254,6 +1290,35 @@
             slotFormModal.style.display = 'flex';
         }
 
+        async function generateMonthSlots() {
+            const month = prompt('Ingrese mes (AAAA-MM):');
+            if (!month) return;
+            const parts = month.split('-');
+            if (parts.length !== 2) { showModal('Formato inválido'); return; }
+            const year = parseInt(parts[0]);
+            const monthNum = parseInt(parts[1]) - 1;
+            if (isNaN(year) || isNaN(monthNum)) { showModal('Formato inválido'); return; }
+            loadingSpinner.style.display = 'flex';
+            try {
+                const daysInMonth = new Date(year, monthNum + 1, 0).getDate();
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const date = new Date(year, monthNum, d);
+                    if ([2,4].includes(date.getDay())) { // martes y jueves
+                        const dateStr = date.toISOString().split('T')[0];
+                        for (const time of ['09:00','11:00','13:00','15:00']) {
+                            const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('date','==', dateStr), where('time','==', time));
+                            const snap = await getDocs(q);
+                            if (snap.empty) {
+                                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), { date: dateStr, time, reserved: false });
+                            }
+                        }
+                    }
+                }
+                showModal('Turnos del mes generados.');
+            } catch(err) { console.error(err); showModal('No se pudo generar turnos.'); }
+            finally { loadingSpinner.style.display = 'none'; }
+        }
+
         async function saveSlot(e) {
             e.preventDefault();
             loadingSpinner.style.display = 'flex';
@@ -1284,7 +1349,7 @@
             });
         }
 
-        function cancelSlotAdmin(slotId) {
+function cancelSlotAdmin(slotId) {
             showConfirmationModal('¿Cancelar reserva de este turno?', async () => {
                 loadingSpinner.style.display = 'flex';
                 try {
@@ -1296,7 +1361,7 @@
                         if (r && r.userId) {
                             await deleteDoc(doc(db, 'artifacts', appId, 'users', r.userId, 'turnos', slotId));
                         }
-                        showModal('Reserva cancelada.');
+                        showModal('Reserva cancelada. Se envió un correo informando la cancelación.', true);
                     }
                 } catch(err) { console.error(err); showModal('No se pudo cancelar.'); }
                 finally { loadingSpinner.style.display = 'none'; }
@@ -1321,7 +1386,7 @@
             turnosSnap.forEach(t => { const d = t.data(); if (d.reserved && d.reservation) { reservedCount++; if (d.reservation.esEscuela) schools.add(d.reservation.institucion); } });
             dashboardStats.innerHTML = `
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-white p-4 rounded-lg shadow"><p class="text-lg font-bold brand-green">${coursesSnap.size}</p><p class="text-sm text-gray-600">Capacitaciones</p></div>
+                    <div class="bg-white p-4 rounded-lg shadow"><p class="text-lg font-bold brand-green">${coursesSnap.size}</p><p class="text-sm text-gray-600">Eventos</p></div>
                     <div class="bg-white p-4 rounded-lg shadow"><p class="text-lg font-bold brand-green">${totalEnrollments}</p><p class="text-sm text-gray-600">Inscriptos</p></div>
                     <div class="bg-white p-4 rounded-lg shadow"><p class="text-lg font-bold brand-green">${schools.size}</p><p class="text-sm text-gray-600">Escuelas registradas</p></div>
                     <div class="bg-white p-4 rounded-lg shadow"><p class="text-lg font-bold brand-green">${reservedCount}</p><p class="text-sm text-gray-600">Turnos reservados</p></div>
@@ -1405,12 +1470,23 @@
         document.getElementById('cancel-news-form').addEventListener('click', () => newsFormModal.style.display = 'none');
         newsForm.addEventListener('submit', saveNews);
         addSlotButton.addEventListener('click', () => openSlotForm());
+        generateMonthButton.addEventListener('click', generateMonthSlots);
         document.getElementById('cancel-slot-form').addEventListener('click', () => slotFormModal.style.display = 'none');
         slotForm.addEventListener('submit', saveSlot);
         turnoForm.addEventListener('submit', bookTurno);
-        document.getElementById('turno-es-escuela').addEventListener('change', e => { datosEscuelaDiv.style.display = e.target.checked ? 'block' : 'none'; });
+        document.getElementById('turno-es-escuela').addEventListener('change', e => {
+            const isEscuela = e.target.checked;
+            datosEscuelaDiv.style.display = isEscuela ? 'block' : 'none';
+            document.getElementById('escuela-note').style.display = isEscuela ? 'block' : 'none';
+            document.getElementById('turno-asistentes').max = isEscuela ? '' : 30;
+        });
         document.getElementById('close-enrolled-users-modal').addEventListener('click', () => enrolledUsersModal.style.display = 'none');
         document.getElementById('close-course-materials-modal').addEventListener('click', () => courseMaterialsModal.style.display = 'none');
+        document.getElementById('export-turnos').addEventListener('click', () => {
+            const start = document.getElementById('export-start').value;
+            const end = document.getElementById('export-end').value;
+            exportTurnosCSV(start, end);
+        });
         document.getElementById('cancel-confirmation-button').addEventListener('click', () => { confirmationModal.style.display = 'none'; actionToConfirm = null; });
         document.getElementById('confirm-action-button').addEventListener('click', () => { if (typeof actionToConfirm === 'function') { actionToConfirm(); } confirmationModal.style.display = 'none'; actionToConfirm = null; });
 
