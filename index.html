@@ -978,15 +978,55 @@
             misTurnosList.innerHTML = '';
             const ref = collection(db, 'artifacts', appId, 'users', currentUserId, 'turnos');
             const snapshot = await getDocs(ref);
-            if (snapshot.empty) { misTurnosList.innerHTML = '<p>No tiene turnos reservados.</p>'; return; }
-            snapshot.forEach(async docSnap => {
+            if (snapshot.empty) {
+                misTurnosList.innerHTML = '<p>No tiene turnos reservados.</p>';
+                return;
+            }
+
+            const turnosPromises = snapshot.docs.map(async docSnap => {
                 const data = docSnap.data();
                 const slotSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'turnos', data.slotId));
-                if (!slotSnap.exists()) return;
+                if (!slotSnap.exists()) return null;
                 const slot = slotSnap.data();
-                const cancelBtn = `<button data-slot="${docSnap.id}" class="cancel-turno-button bg-red-600 text-white p-2 rounded-lg text-sm">Cancelar</button>`;
-                misTurnosList.innerHTML += `<div class="bg-white p-4 rounded-lg shadow flex justify-between items-center"><span>${slot.date} ${slot.time} - ${data.institucion}</span>${cancelBtn}</div>`;
+                return { id: docSnap.id, ...data, slot };
             });
+
+            const turnos = (await Promise.all(turnosPromises)).filter(Boolean);
+
+            if (turnos.length === 0) {
+                misTurnosList.innerHTML = '<p>No tiene turnos reservados.</p>';
+                return;
+            }
+
+            let html = '';
+            const now = new Date();
+
+            turnos.sort((a, b) => (a.slot.date + a.slot.time).localeCompare(b.slot.date + b.slot.time));
+
+            turnos.forEach(turno => {
+                const slotDate = new Date(`${turno.slot.date}T${turno.slot.time}`);
+                const hoursUntil = (slotDate - now) / 3600000;
+
+                let statusHTML;
+                let cardClass = 'bg-white';
+
+                if (hoursUntil < 0) {
+                    statusHTML = '<span class="text-gray-500 font-semibold">Turno vencido</span>';
+                    cardClass = 'bg-gray-200';
+                } else if (hoursUntil < 24) {
+                    statusHTML = '<button class="bg-gray-400 text-white p-2 rounded-lg text-sm cursor-not-allowed" title="No se puede cancelar con menos de 24hs de anticipación" disabled>Cancelar</button>';
+                } else {
+                    statusHTML = `<button data-slot="${turno.id}" class="cancel-turno-button bg-red-600 text-white p-2 rounded-lg text-sm">Cancelar</button>`;
+                }
+
+                html += `
+                    <div class="${cardClass} p-4 rounded-lg shadow flex justify-between items-center">
+                        <span>${turno.slot.date} ${turno.slot.time} - ${turno.institucion}</span>
+                        ${statusHTML}
+                    </div>`;
+            });
+
+            misTurnosList.innerHTML = html;
             document.querySelectorAll('.cancel-turno-button').forEach(btn => btn.addEventListener('click', cancelTurno));
         }
 
