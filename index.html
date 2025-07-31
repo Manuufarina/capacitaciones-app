@@ -249,6 +249,7 @@
                     <button data-view="admin-courses" class="admin-tab-button px-4 py-2 font-medium border-b-4 brand-border-green brand-green">Gestionar Eventos</button>
                     <button data-view="admin-turnos" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Turnera</button>
                     <button data-view="admin-news" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Noticias</button>
+                    <button data-view="admin-efemerides" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Efemérides</button>
                     <button data-view="admin-enrollments" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Inscriptos</button>
                 </nav>
             </div>
@@ -282,6 +283,11 @@
             <div id="admin-news-view" class="hidden">
                 <button id="add-news-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Crear Nueva Noticia</button>
                 <div id="admin-news-list" class="space-y-4"></div>
+            </div>
+            <!-- Admin Efemerides View -->
+            <div id="admin-efemerides-view" class="hidden">
+                <button id="add-efemeride-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Crear Nueva Efeméride</button>
+                <div id="admin-efemerides-list" class="space-y-4"></div>
             </div>
             <!-- Admin Enrollments View -->
             <div id="admin-enrollments-view" class="hidden">
@@ -339,6 +345,21 @@
                     <div class="flex justify-end space-x-4 mt-6">
                         <button type="button" id="cancel-news-form" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">Cancelar</button>
                         <button type="submit" class="brand-bg-green text-white font-bold py-2 px-6 rounded-lg">Guardar Noticia</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="efemeride-form-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl p-8 max-w-lg w-full">
+                <h3 id="efemeride-form-title" class="text-2xl font-bold mb-6 brand-green"></h3>
+                <form id="efemeride-form" class="space-y-4">
+                    <input type="hidden" id="efemeride-id">
+                    <input type="text" id="efemeride-title" placeholder="Título de la Efeméride" class="w-full px-4 py-2 border rounded-lg" required>
+                    <input type="date" id="efemeride-date" class="w-full px-4 py-2 border rounded-lg" required>
+                    <div class="flex justify-end space-x-4 mt-6">
+                        <button type="button" id="cancel-efemeride-form" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg">Cancelar</button>
+                        <button type="submit" class="brand-bg-green text-white font-bold py-2 px-6 rounded-lg">Guardar Efeméride</button>
                     </div>
                 </form>
             </div>
@@ -1300,6 +1321,69 @@
             } catch (error) { console.error("Error saving news:", error); showModal("Error al guardar la noticia."); }
             finally { loadingSpinner.style.display = 'none'; }
         }
+
+        function openEfemerideForm(efemerideId = null) {
+            const efemerideForm = document.getElementById('efemeride-form');
+            efemerideForm.reset();
+            document.getElementById('efemeride-form-title').textContent = efemerideId ? "Editar Efeméride" : "Crear Efeméride";
+            const efemerideFormModal = document.getElementById('efemeride-form-modal');
+
+            if (efemerideId) {
+                const efemerideRef = doc(db, 'artifacts', appId, 'public', 'data', 'efemerides', efemerideId);
+                getDoc(efemerideRef).then(docSnap => {
+                    if (docSnap.exists()) {
+                        const efemeride = docSnap.data();
+                        document.getElementById('efemeride-id').value = efemerideId;
+                        document.getElementById('efemeride-title').value = efemeride.title;
+                        document.getElementById('efemeride-date').value = efemeride.date;
+                    }
+                });
+            } else {
+                 document.getElementById('efemeride-id').value = '';
+            }
+            efemerideFormModal.style.display = 'flex';
+        }
+
+        async function saveEfemeride(e) {
+            e.preventDefault();
+            loadingSpinner.style.display = 'flex';
+            const efemerideId = document.getElementById('efemeride-id').value;
+            const efemerideData = {
+                title: document.getElementById('efemeride-title').value,
+                date: document.getElementById('efemeride-date').value,
+                infoOnly: true
+            };
+            try {
+                const efemeridesRef = collection(db, 'artifacts', appId, 'public', 'data', 'efemerides');
+                if (efemerideId) {
+                    await updateDoc(doc(efemeridesRef, efemerideId), efemerideData);
+                } else {
+                    await addDoc(efemeridesRef, efemerideData);
+                }
+                showModal("Efeméride guardada.");
+                document.getElementById('efemeride-form-modal').style.display = 'none';
+            } catch (error) {
+                console.error("Error saving efemeride:", error);
+                showModal("Error al guardar la efeméride.");
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        function deleteEfemeride(efemerideId, efemerideTitle) {
+            showConfirmationModal(`¿Está seguro que desea eliminar la efeméride "${efemerideTitle}"?`, async () => {
+                loadingSpinner.style.display = 'flex';
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'efemerides', efemerideId));
+                    showModal("Efeméride eliminada.");
+                } catch (error) {
+                    console.error("Error deleting efemeride:", error);
+                    showModal("Error al eliminar la efeméride.");
+                } finally {
+                    loadingSpinner.style.display = 'none';
+                }
+            });
+        }
         function deleteNews(newsId, newsTitle) {
             showConfirmationModal(`¿Está seguro que desea eliminar la noticia "${newsTitle}"?`, async () => {
                 loadingSpinner.style.display = 'flex';
@@ -1308,6 +1392,21 @@
                     showModal("Noticia eliminada.");
                 } catch (error) { console.error("Error deleting news:", error); showModal("Error al eliminar la noticia."); }
                 finally { loadingSpinner.style.display = 'none'; }
+            });
+        }
+
+        function loadAdminEfemerides() {
+            const adminEfemeridesListDiv = document.getElementById('admin-efemerides-list');
+            const efemeridesRef = collection(db, 'artifacts', appId, 'public', 'data', 'efemerides');
+            onSnapshot(query(efemeridesRef, orderBy("date", "desc")), (snapshot) => {
+                adminEfemeridesListDiv.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const efemeride = { id: doc.id, ...doc.data() };
+                    const displayDate = new Date(efemeride.date).toLocaleDateString('es-AR', {timeZone: 'UTC'});
+                    adminEfemeridesListDiv.innerHTML += `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"><div><p class="font-bold text-lg">${efemeride.title}</p><p class="text-sm text-gray-500">${displayDate}</p></div><div class="flex space-x-2"><button data-efemeride-id="${efemeride.id}" class="edit-efemeride-button bg-yellow-500 text-white p-2 rounded-lg text-sm">Editar</button><button data-efemeride-id="${efemeride.id}" data-efemeride-title="${efemeride.title}" class="delete-efemeride-button bg-red-500 text-white p-2 rounded-lg text-sm">Eliminar</button></div></div>`;
+                });
+                document.querySelectorAll('.edit-efemeride-button').forEach(b => b.onclick = (e) => openEfemerideForm(e.target.dataset.efemerideId));
+                document.querySelectorAll('.delete-efemeride-button').forEach(b => b.onclick = (e) => deleteEfemeride(e.target.dataset.efemerideId, e.target.dataset.efemerideTitle));
             });
         }
 
@@ -1521,9 +1620,11 @@ function cancelSlotAdmin(slotId) {
             document.getElementById('admin-courses-view').style.display = e.target.dataset.view === 'admin-courses' ? 'block' : 'none';
             document.getElementById('admin-turnos-view').style.display = e.target.dataset.view === 'admin-turnos' ? 'block' : 'none';
             document.getElementById('admin-news-view').style.display = e.target.dataset.view === 'admin-news' ? 'block' : 'none';
+            document.getElementById('admin-efemerides-view').style.display = e.target.dataset.view === 'admin-efemerides' ? 'block' : 'none';
             document.getElementById('admin-enrollments-view').style.display = e.target.dataset.view === 'admin-enrollments' ? 'block' : 'none';
             if(e.target.dataset.view === 'admin-dashboard') loadAdminDashboard();
             if(e.target.dataset.view === 'admin-enrollments') loadAdminEnrollments();
+            if(e.target.dataset.view === 'admin-efemerides') loadAdminEfemerides();
         }));
         document.getElementById('add-course-button').addEventListener('click', () => openCourseForm());
         document.getElementById('cancel-course-form').addEventListener('click', () => courseFormModal.style.display = 'none');
@@ -1531,6 +1632,9 @@ function cancelSlotAdmin(slotId) {
         document.getElementById('add-news-button').addEventListener('click', () => openNewsForm());
         document.getElementById('cancel-news-form').addEventListener('click', () => newsFormModal.style.display = 'none');
         newsForm.addEventListener('submit', saveNews);
+        document.getElementById('add-efemeride-button').addEventListener('click', () => openEfemerideForm());
+        document.getElementById('cancel-efemeride-form').addEventListener('click', () => { document.getElementById('efemeride-form-modal').style.display = 'none'; });
+        document.getElementById('efemeride-form').addEventListener('submit', saveEfemeride);
         addSlotButton.addEventListener('click', () => openSlotForm());
         generateMonthButton.addEventListener('click', generateMonthSlots);
         document.getElementById('cancel-slot-form').addEventListener('click', () => slotFormModal.style.display = 'none');
