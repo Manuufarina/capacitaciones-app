@@ -975,18 +975,35 @@
         }
 
         async function loadUserTurnos() {
-            misTurnosList.innerHTML = '';
+            if (!currentUserId) return;
             const ref = collection(db, 'artifacts', appId, 'users', currentUserId, 'turnos');
             const snapshot = await getDocs(ref);
-            if (snapshot.empty) { misTurnosList.innerHTML = '<p>No tiene turnos reservados.</p>'; return; }
-            snapshot.forEach(async docSnap => {
+
+            if (snapshot.empty) {
+                misTurnosList.innerHTML = '<p>No tiene turnos reservados.</p>';
+                return;
+            }
+
+            const turnoPromises = snapshot.docs.map(async docSnap => {
                 const data = docSnap.data();
                 const slotSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'turnos', data.slotId));
-                if (!slotSnap.exists()) return;
+                if (!slotSnap.exists()) return null;
                 const slot = slotSnap.data();
-                const cancelBtn = `<button data-slot="${docSnap.id}" class="cancel-turno-button bg-red-600 text-white p-2 rounded-lg text-sm">Cancelar</button>`;
-                misTurnosList.innerHTML += `<div class="bg-white p-4 rounded-lg shadow flex justify-between items-center"><span>${slot.date} ${slot.time} - ${data.institucion}</span>${cancelBtn}</div>`;
+                return {
+                    id: docSnap.id,
+                    date: slot.date,
+                    time: slot.time,
+                    institucion: data.institucion
+                };
             });
+
+            const turnos = (await Promise.all(turnoPromises)).filter(t => t);
+
+            misTurnosList.innerHTML = turnos.map(turno => {
+                const cancelBtn = `<button data-slot="${turno.id}" class="cancel-turno-button bg-red-600 text-white p-2 rounded-lg text-sm">Cancelar</button>`;
+                return `<div class="bg-white p-4 rounded-lg shadow flex justify-between items-center"><span>${turno.date} ${turno.time} - ${turno.institucion}</span>${cancelBtn}</div>`;
+            }).join('');
+
             document.querySelectorAll('.cancel-turno-button').forEach(btn => btn.addEventListener('click', cancelTurno));
         }
 
