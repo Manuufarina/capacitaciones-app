@@ -267,17 +267,28 @@
             <div id="admin-turnos-view" class="hidden">
                 <button id="add-slot-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Nuevo Turno</button>
                 <button id="generate-month-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Cargar Mes</button>
-                <h4 class="text-xl font-bold brand-green mb-2">Turnos Habilitados</h4>
-                <div id="admin-turnos-list" class="space-y-4 mb-6"></div>
-                <div class="flex items-end space-x-2 mb-2">
-                    <h4 class="text-xl font-bold brand-green">Turnos Tomados</h4>
-                    <input type="date" id="export-start" class="border px-2 py-1 rounded" />
-                    <input type="date" id="export-end" class="border px-2 py-1 rounded" />
-                    <button id="export-turnos" class="bg-blue-600 text-white px-2 py-1 rounded text-sm">Descargar CSV</button>
+                <div id="turnos-filter-bar" class="flex space-x-4 mb-4">
+                    <label class="flex items-center space-x-1"><input type="checkbox" class="turnos-filter" data-target="section-turnos-reserved" checked><span>Turnos Tomados</span></label>
+                    <label class="flex items-center space-x-1"><input type="checkbox" class="turnos-filter" data-target="section-turnos-list" checked><span>Turnos Habilitados</span></label>
+                    <label class="flex items-center space-x-1"><input type="checkbox" class="turnos-filter" data-target="section-turnos-free" checked><span>Turnos Sin Tomar</span></label>
                 </div>
-                <div id="admin-turnos-reserved" class="space-y-4 mb-6"></div>
-                <h4 class="text-xl font-bold brand-green mb-2">Turnos Sin Tomar</h4>
-                <div id="admin-turnos-free" class="space-y-4"></div>
+                <div id="section-turnos-list">
+                    <h4 class="text-xl font-bold brand-green mb-2">Turnos Habilitados</h4>
+                    <div id="admin-turnos-list" class="space-y-4 mb-6"></div>
+                </div>
+                <div id="section-turnos-reserved">
+                    <div class="flex items-end space-x-2 mb-2">
+                        <h4 class="text-xl font-bold brand-green">Turnos Tomados</h4>
+                        <input type="date" id="export-start" class="border px-2 py-1 rounded" />
+                        <input type="date" id="export-end" class="border px-2 py-1 rounded" />
+                        <button id="export-turnos" class="bg-blue-600 text-white px-2 py-1 rounded text-sm">Descargar CSV</button>
+                    </div>
+                    <div id="admin-turnos-reserved" class="space-y-4 mb-6"></div>
+                </div>
+                <div id="section-turnos-free">
+                    <h4 class="text-xl font-bold brand-green mb-2">Turnos Sin Tomar</h4>
+                    <div id="admin-turnos-free" class="space-y-4"></div>
+                </div>
             </div>
             <!-- Admin News View -->
             <div id="admin-news-view" class="hidden">
@@ -1415,8 +1426,9 @@
                 adminTurnosList.innerHTML = '';
                 adminTurnosReserved.innerHTML = '';
                 adminTurnosFree.innerHTML = '';
-                snapshot.forEach(docSnap => {
-                    const t = { id: docSnap.id, ...docSnap.data() };
+                const turnos = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+                turnos.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+                turnos.forEach(t => {
                     const baseInfo = `${t.date} ${t.time}`;
                     adminTurnosList.innerHTML += `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"><span>${baseInfo}${t.reserved ? ' - Reservado' : ''}</span><div class="flex space-x-2"><button data-slot-id="${t.id}" class="edit-slot-button bg-yellow-500 text-white p-2 rounded-lg text-sm">Editar</button><button data-slot-id="${t.id}" class="delete-slot-button bg-red-500 text-white p-2 rounded-lg text-sm">Eliminar</button></div></div>`;
                     if (t.reserved && t.reservation) {
@@ -1639,6 +1651,10 @@ function cancelSlotAdmin(slotId) {
         generateMonthButton.addEventListener('click', generateMonthSlots);
         document.getElementById('cancel-slot-form').addEventListener('click', () => slotFormModal.style.display = 'none');
         slotForm.addEventListener('submit', saveSlot);
+        document.querySelectorAll('.turnos-filter').forEach(f => f.addEventListener('change', e => {
+            const section = document.getElementById(e.target.dataset.target);
+            section.classList.toggle('hidden', !e.target.checked);
+        }));
         turnoForm.addEventListener('submit', bookTurno);
         document.getElementById('turno-es-escuela').addEventListener('change', e => {
             const isEscuela = e.target.checked;
