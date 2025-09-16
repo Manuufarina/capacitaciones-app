@@ -16,6 +16,8 @@ npm install
 ```
 EMAIL_USER=dirambiente.msi@gmail.com
 EMAIL_PASS=Carpincho1234
+# Opcional: recibir copias de cada correo
+NOTIFY_EMAILS=dirambiente.msi@gmail.com
 ```
 
 3. Start the server locally:

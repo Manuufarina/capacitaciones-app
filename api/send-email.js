@@ -14,11 +14,13 @@ module.exports = async (req, res) => {
   }
 
   const { to, subject, text, name } = req.body || {};
-  if (!to || !subject || !text || !name) {
+  const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
+  if (recipients.length === 0 || !subject || !text) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
-  const currentDate = new Date().toLocaleDateString('es-ES');
+  const recipientName = name || 'Vecino/a';
+  const currentDate = new Date().toLocaleDateString('es-AR');
   const logoUrl = 'https://drive.google.com/uc?export=view&id=1BXBBYqL3uDoPXd4i9jdRu1gFnA2McZpj';
 
   const htmlBody = `
@@ -26,7 +28,7 @@ module.exports = async (req, res) => {
       <p><b>${subject}</b></p>
       <p><b>Fecha:</b> ${currentDate}</p>
       <br>
-      <p>Estimado/a ${name},</p>
+      <p>Estimado/a ${recipientName},</p>
       <br>
       <p>${text}</p>
       <br>
@@ -36,13 +38,24 @@ module.exports = async (req, res) => {
     </div>
   `;
 
+  const mailOptions = {
+    from: EMAIL_USER,
+    to: recipients.join(','),
+    subject,
+    text,
+    html: htmlBody,
+  };
+
+  const notify = process.env.NOTIFY_EMAILS;
+  if (notify) {
+    const bccList = notify.split(',').map(email => email.trim()).filter(Boolean);
+    if (bccList.length > 0) {
+      mailOptions.bcc = bccList;
+    }
+  }
+
   try {
-    await transporter.sendMail({
-      from: EMAIL_USER,
-      to,
-      subject,
-      html: htmlBody,
-    });
+    await transporter.sendMail(mailOptions);
     res.status(200).json({ message: 'Email sent' });
   } catch (err) {
     console.error(err);
