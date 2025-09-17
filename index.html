@@ -272,22 +272,37 @@
                     <label class="flex items-center space-x-1"><input type="checkbox" class="turnos-filter" data-target="section-turnos-list" checked><span>Turnos Habilitados</span></label>
                     <label class="flex items-center space-x-1"><input type="checkbox" class="turnos-filter" data-target="section-turnos-free" checked><span>Turnos Sin Tomar</span></label>
                 </div>
-                <div id="section-turnos-list">
-                    <h4 class="text-xl font-bold brand-green mb-2">Turnos Habilitados</h4>
-                    <div id="admin-turnos-list" class="space-y-4 mb-6"></div>
-                </div>
-                <div id="section-turnos-reserved">
-                    <div class="flex items-end space-x-2 mb-2">
-                        <h4 class="text-xl font-bold brand-green">Turnos Tomados</h4>
-                        <input type="date" id="export-start" class="border px-2 py-1 rounded" />
-                        <input type="date" id="export-end" class="border px-2 py-1 rounded" />
-                        <button id="export-turnos" class="bg-blue-600 text-white px-2 py-1 rounded text-sm">Descargar CSV</button>
+                <div id="section-turnos-list" class="mb-6">
+                    <button type="button" class="turnos-section-toggle w-full flex items-center justify-between bg-green-50 border border-green-200 text-left px-4 py-2 rounded-lg font-semibold text-green-800" data-target="turnos-habilitados-content">
+                        <span>Turnos Habilitados</span>
+                        <span class="toggle-icon text-2xl leading-none">−</span>
+                    </button>
+                    <div id="turnos-habilitados-content" class="mt-4">
+                        <div id="admin-turnos-list" class="space-y-4"></div>
                     </div>
-                    <div id="admin-turnos-reserved" class="space-y-4 mb-6"></div>
                 </div>
-                <div id="section-turnos-free">
-                    <h4 class="text-xl font-bold brand-green mb-2">Turnos Sin Tomar</h4>
-                    <div id="admin-turnos-free" class="space-y-4"></div>
+                <div id="section-turnos-reserved" class="mb-6">
+                    <button type="button" class="turnos-section-toggle w-full flex items-center justify-between bg-green-50 border border-green-200 text-left px-4 py-2 rounded-lg font-semibold text-green-800" data-target="turnos-tomados-content">
+                        <span>Turnos Tomados</span>
+                        <span class="toggle-icon text-2xl leading-none">−</span>
+                    </button>
+                    <div id="turnos-tomados-content" class="mt-4 space-y-4">
+                        <div class="flex flex-wrap items-end gap-2">
+                            <input type="date" id="export-start" class="border px-2 py-1 rounded" />
+                            <input type="date" id="export-end" class="border px-2 py-1 rounded" />
+                            <button id="export-turnos" class="bg-blue-600 text-white px-2 py-1 rounded text-sm">Descargar CSV</button>
+                        </div>
+                        <div id="admin-turnos-reserved" class="space-y-4"></div>
+                    </div>
+                </div>
+                <div id="section-turnos-free" class="mb-6">
+                    <button type="button" class="turnos-section-toggle w-full flex items-center justify-between bg-green-50 border border-green-200 text-left px-4 py-2 rounded-lg font-semibold text-green-800" data-target="turnos-sin-tomar-content">
+                        <span>Turnos Sin Tomar</span>
+                        <span class="toggle-icon text-2xl leading-none">−</span>
+                    </button>
+                    <div id="turnos-sin-tomar-content" class="mt-4">
+                        <div id="admin-turnos-free" class="space-y-4"></div>
+                    </div>
                 </div>
             </div>
             <!-- Admin News View -->
@@ -713,9 +728,60 @@
             });
 
             const turnosRef = collection(db, 'artifacts', appId, 'public', 'data', 'turnos');
-            onSnapshot(turnosRef, () => {
-                loadAvailableTurnos();
-                if (currentUserId) loadUserTurnos();
+            onSnapshot(turnosRef, async (snapshot) => {
+                try {
+                    await cleanExpiredTurnos(snapshot.docs);
+                    await loadAvailableTurnos();
+                    if (currentUserId) {
+                        await loadUserTurnos();
+                    }
+                } catch (error) {
+                    console.error('Error actualizando turnos:', error);
+                }
+            });
+        }
+
+        async function cleanExpiredTurnos(snapshotDocs = []) {
+            const now = new Date();
+            const expiredDocs = snapshotDocs.filter(docSnap => {
+                const data = docSnap.data();
+                if (!data || data.reserved) return false;
+                if (!data.date || !data.time) return false;
+                const slotDate = new Date(`${data.date}T${data.time}`);
+                if (isNaN(slotDate.getTime())) return false;
+                return slotDate < now;
+            });
+            if (expiredDocs.length === 0) return;
+            try {
+                await Promise.all(expiredDocs.map(docSnap => deleteDoc(docSnap.ref)));
+            } catch (error) {
+                console.error('Error eliminando turnos vencidos:', error);
+            }
+        }
+
+        function setupToggleButtons(selector) {
+            document.querySelectorAll(selector).forEach(button => {
+                const targetId = button.dataset.target;
+                if (!targetId) return;
+                const target = document.getElementById(targetId);
+                if (!target) return;
+                const icon = button.querySelector('.toggle-icon');
+                const updateState = () => {
+                    const isHidden = target.classList.contains('hidden');
+                    if (icon) icon.textContent = isHidden ? '+' : '−';
+                    button.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+                };
+                button.setAttribute('aria-controls', targetId);
+                if (button.dataset.toggleInitialized === 'true') {
+                    updateState();
+                    return;
+                }
+                button.dataset.toggleInitialized = 'true';
+                updateState();
+                button.addEventListener('click', () => {
+                    target.classList.toggle('hidden');
+                    updateState();
+                });
             });
         }
         
@@ -1448,21 +1514,83 @@
 
         function loadAdminTurnos() {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), (snapshot) => {
+                const now = new Date();
                 adminTurnosList.innerHTML = '';
                 adminTurnosReserved.innerHTML = '';
                 adminTurnosFree.innerHTML = '';
-                const turnos = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
-                turnos.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+                const turnos = snapshot.docs
+                    .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+                    .filter(t => {
+                        if (!t) return false;
+                        if (t.reserved) return true;
+                        if (!t.date || !t.time) return true;
+                        const slotDate = new Date(`${t.date}T${t.time}`);
+                        if (isNaN(slotDate.getTime())) return true;
+                        return slotDate >= now;
+                    })
+                    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+                const monthGroups = {};
+                let hasReserved = false;
+                let hasFree = false;
+
                 turnos.forEach(t => {
-                    const baseInfo = `${t.date} ${t.time}`;
-                    adminTurnosList.innerHTML += `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"><span>${baseInfo}${t.reserved ? ' - Reservado' : ''}</span><div class="flex space-x-2"><button data-slot-id="${t.id}" class="edit-slot-button bg-yellow-500 text-white p-2 rounded-lg text-sm">Editar</button><button data-slot-id="${t.id}" class="delete-slot-button bg-red-500 text-white p-2 rounded-lg text-sm">Eliminar</button></div></div>`;
+                    const monthKey = (t.date && t.date.length >= 7) ? t.date.slice(0, 7) : 'sin-fecha';
+                    if (!monthGroups[monthKey]) monthGroups[monthKey] = [];
+                    monthGroups[monthKey].push(t);
+
                     if (t.reserved && t.reservation) {
+                        hasReserved = true;
                         const r = t.reservation;
-                        adminTurnosReserved.innerHTML += `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"><span>${baseInfo} - ${r.institucion}</span><button data-slot-id="${t.id}" class="admin-cancel-slot bg-red-600 text-white p-2 rounded-lg text-sm">Cancelar</button></div>`;
-                    } else {
-                        adminTurnosFree.innerHTML += `<div class="bg-white p-4 rounded-lg shadow-md">${baseInfo}</div>`;
+                        const details = [];
+                        if (r.direccion) details.push(r.direccion);
+                        if (r.telefono) details.push(`Tel: ${r.telefono}`);
+                        if (r.contactoEmail) details.push(r.contactoEmail);
+                        adminTurnosReserved.innerHTML += `<div class="bg-white border border-gray-200 rounded-lg px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2"><div><p class="font-semibold text-gray-700">${t.date} ${t.time} - ${r.institucion || 'Reservado'}</p>${details.length ? `<p class="text-sm text-gray-500">${details.join(' · ')}</p>` : ''}</div><button data-slot-id="${t.id}" class="admin-cancel-slot bg-red-600 text-white px-3 py-1 rounded-lg text-sm self-start md:self-auto">Cancelar</button></div>`;
+                    } else if (t.date && t.time) {
+                        hasFree = true;
+                        adminTurnosFree.innerHTML += `<div class="bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-700 font-medium">${t.date} ${t.time}</div>`;
                     }
                 });
+
+                if (!hasReserved) {
+                    adminTurnosReserved.innerHTML = '<p class="text-sm text-gray-500">No hay turnos tomados.</p>';
+                }
+                if (!hasFree) {
+                    adminTurnosFree.innerHTML = '<p class="text-sm text-gray-500">No hay turnos sin tomar.</p>';
+                }
+
+                const monthEntries = Object.entries(monthGroups).sort((a, b) => a[0].localeCompare(b[0]));
+                if (monthEntries.length === 0) {
+                    adminTurnosList.innerHTML = '<p class="text-sm text-gray-500">No hay turnos habilitados.</p>';
+                } else {
+                    monthEntries.forEach(([monthKey, monthTurnos]) => {
+                        const sanitizedKey = monthKey === 'sin-fecha' ? 'sinfecha' : monthKey.replace(/[^a-zA-Z0-9]/g, '');
+                        const monthContainerId = `turnos-mes-${sanitizedKey}`;
+                        let monthLabel;
+                        if (monthKey === 'sin-fecha') {
+                            monthLabel = 'Sin fecha';
+                        } else {
+                            const monthDate = new Date(`${monthKey}-01T00:00:00`);
+                            if (!isNaN(monthDate.getTime())) {
+                                const label = monthDate.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+                                monthLabel = label.charAt(0).toUpperCase() + label.slice(1);
+                            } else {
+                                monthLabel = monthKey;
+                            }
+                        }
+                        const monthContent = monthTurnos.map(t => {
+                            const statusTag = t.reserved
+                                ? '<span class="ml-2 text-xs font-semibold text-red-700 bg-red-100 px-2 py-1 rounded-full uppercase">Reservado</span>'
+                                : '<span class="ml-2 text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-full uppercase">Disponible</span>';
+                            const slotLabel = (t.date && t.time) ? `${t.date} ${t.time}` : 'Horario sin definir';
+                            return `<div class="bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2"><div class="flex items-center text-gray-700 font-medium"><span>${slotLabel}</span>${statusTag}</div><div class="flex space-x-2"><button data-slot-id="${t.id}" class="edit-slot-button bg-yellow-500 text-white px-3 py-1 rounded-lg text-sm">Editar</button><button data-slot-id="${t.id}" class="delete-slot-button bg-red-500 text-white px-3 py-1 rounded-lg text-sm">Eliminar</button></div></div>`;
+                        }).join('');
+                        adminTurnosList.innerHTML += `<div class="border border-green-200 rounded-lg overflow-hidden bg-white"><button type="button" class="month-toggle w-full flex justify-between items-center px-4 py-3 bg-green-50 text-left font-semibold text-green-800" data-target="${monthContainerId}"><span>${monthLabel}</span><span class="toggle-icon text-2xl leading-none">−</span></button><div id="${monthContainerId}" class="space-y-3 px-4 py-4">${monthContent}</div></div>`;
+                    });
+                }
+
+                setupToggleButtons('.month-toggle');
                 document.querySelectorAll('.edit-slot-button').forEach(b => b.onclick = (e) => openSlotForm(e.target.dataset.slotId));
                 document.querySelectorAll('.delete-slot-button').forEach(b => b.onclick = (e) => deleteSlot(e.target.dataset.slotId));
                 document.querySelectorAll('.admin-cancel-slot').forEach(b => b.onclick = (e) => cancelSlotAdmin(e.target.dataset.slotId));
@@ -1686,6 +1814,7 @@ function cancelSlotAdmin(slotId) {
         generateMonthButton.addEventListener('click', generateMonthSlots);
         document.getElementById('cancel-slot-form').addEventListener('click', () => slotFormModal.style.display = 'none');
         slotForm.addEventListener('submit', saveSlot);
+        setupToggleButtons('.turnos-section-toggle');
         document.querySelectorAll('.turnos-filter').forEach(f => f.addEventListener('change', e => {
             const section = document.getElementById(e.target.dataset.target);
             section.classList.toggle('hidden', !e.target.checked);
