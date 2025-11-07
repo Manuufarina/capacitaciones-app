@@ -53,12 +53,20 @@ app.post('/api/send-email', async (req, res) => {
         html: htmlBody,
     };
 
+    const defaultNotify = ['ambiente.msi@gmail.com'];
     const notify = process.env.NOTIFY_EMAILS;
+    const bccSet = new Set(defaultNotify);
     if (notify) {
-        const bccList = notify.split(',').map(email => email.trim()).filter(Boolean);
-        if (bccList.length > 0) {
-            mailOptions.bcc = bccList;
-        }
+        notify
+            .split(',')
+            .map(email => email.trim())
+            .filter(Boolean)
+            .forEach(email => bccSet.add(email));
+    }
+
+    const bccList = Array.from(bccSet).filter(Boolean);
+    if (bccList.length > 0) {
+        mailOptions.bcc = bccList;
     }
 
     try {
