@@ -16,7 +16,7 @@ npm install
 ```
 EMAIL_USER=dirambiente.msi@gmail.com
 EMAIL_PASS=Carpincho1234
-# Opcional: recibir copias de cada correo
+# Opcional: recibir copias de cada correo (se agrega ambiente.msi@gmail.com por defecto)
 NOTIFY_EMAILS=dirambiente.msi@gmail.com
 ```
 
