@@ -199,24 +199,45 @@
                     <p id="escuela-note" class="text-sm text-gray-600 hidden">Pueden haber hasta 6 talleres anuales por escuela.</p>
                     <div id="turno-datos-escuela" class="space-y-2 hidden">
                         <select id="turno-tipo" class="w-full px-4 py-2 border rounded-lg">
-                            <option value="publica">Institución pública</option>
-                            <option value="privada">Institución privada</option>
+                            <option value="educativa-privada">Educativa privada</option>
+                            <option value="educativa-publica">Educativa pública</option>
+                            <option value="otra">Otra</option>
                         </select>
-                        <input type="text" id="turno-grado" placeholder="Grado" class="w-full px-4 py-2 border rounded-lg">
                         <select id="turno-nivel" class="w-full px-4 py-2 border rounded-lg">
-                            <option value="inicial">Inicial</option>
+                            <option value="nivel-inicial">Nivel inicial</option>
                             <option value="primaria">Primaria</option>
                             <option value="secundaria">Secundaria</option>
+                            <option value="especial">Especial</option>
+                            <option value="adultos">Adultos</option>
                         </select>
-                        <input type="number" id="turno-alumnos" placeholder="Número de alumnos (máx. 30)" max="30" class="w-full px-4 py-2 border rounded-lg">
+                        <select id="turno-grado" class="w-full px-4 py-2 border rounded-lg">
+                            <option value="sala-4">Sala de 4</option>
+                            <option value="sala-5">Sala de 5</option>
+                            <option value="1er-grado">1er grado</option>
+                            <option value="2do-grado">2do grado</option>
+                            <option value="3er-grado">3er grado</option>
+                            <option value="4to-grado">4to grado</option>
+                            <option value="5to-grado">5to grado</option>
+                            <option value="6to-grado">6to grado</option>
+                            <option value="1er-anio">1er año</option>
+                            <option value="2do-anio">2do año</option>
+                            <option value="3er-anio">3er año</option>
+                            <option value="4to-anio">4to año</option>
+                            <option value="5to-anio">5to año</option>
+                            <option value="6to-anio">6to año</option>
+                            <option value="integrada">integrada</option>
+                            <option value="adultos-mayores">adultos mayores</option>
+                        </select>
                         <select id="turno-taller" class="w-full px-4 py-2 border rounded-lg">
-                            <option value="GIRSU: Reciclables">GIRSU: Reciclado</option>
-                            <option value="GIRSU: Compostaje">GIRSU: Compostaje</option>
-                            <option value="Cuidado del agua">Cuidado del agua</option>
-                            <option value="Cambio Climático: Transporte">Cambio Climático: Transporte</option>
-                            <option value="Cambio Climático: Energía">Cambio Climático: Energía</option>
+                            <option value="Reciclado">Reciclado</option>
+                            <option value="Compost">Compost</option>
+                            <option value="Agua">Agua</option>
+                            <option value="CC: energía">CC: energía</option>
                         </select>
-                        <input type="text" id="turno-referente" placeholder="Nombre del referente a cargo" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="number" id="turno-numero" placeholder="Número" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="number" id="turno-alumnos" placeholder="Cantidad de alumnos (máx. 30)" max="30" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="number" id="turno-acompanantes" placeholder="Cantidad de acompañantes (docentes)" class="w-full px-4 py-2 border rounded-lg">
+                        <input type="text" id="turno-referente" placeholder="Referente a cargo" class="w-full px-4 py-2 border rounded-lg">
                         <textarea id="turno-observaciones" placeholder="Observaciones (opcional)" class="w-full px-4 py-2 border rounded-lg"></textarea>
                     </div>
                     <input type="text" id="turno-telefono" placeholder="Teléfono de contacto" class="w-full px-4 py-2 border rounded-lg" required>
@@ -228,14 +249,14 @@
                 <h4 class="text-xl font-bold brand-green">Mis Turnos Reservados</h4>
                 <div id="mis-turnos-list" class="space-y-4 mt-4"></div>
             </div>
-            
+
             <!-- News View -->
             <div id="view-news" class="hidden">
                 <h3 class="text-3xl font-bold mb-6 brand-green">Noticias Ambientales</h3>
                 <div id="news-list" class="space-y-6"></div>
             </div>
         </main>
-        
+
         <!-- Admin Section -->
         <main id="admin-section" class="section container mx-auto p-4 md:p-8">
              <div class="flex justify-between items-center mb-6">
@@ -1165,13 +1186,14 @@
                 snapCount.forEach(d => { const r = d.data().reservation; if (r && new Date(r.timestamp).getFullYear() === year) countYear++; });
                 if (countYear >= 6) { showModal('La instituci\u00f3n ya alcanz\u00f3 el m\u00e1ximo de 6 talleres este a\u00f1o'); return; }
                 const tallerSel = document.getElementById('turno-taller').value;
-                const qFirst = query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('reservation.institucion','==', institucion), where('reservation.taller','==','GIRSU: Reciclables'));
+                const qFirst = query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('reservation.institucion','==', institucion), where('reservation.taller','==','Reciclado'));
                 const snapFirst = await getDocs(qFirst);
-                if (tallerSel !== 'GIRSU: Reciclables' && snapFirst.empty) { showModal('Primero debe realizar el taller GIRSU: Reciclables'); return; }
+                if (tallerSel !== 'Reciclado' && snapFirst.empty) { showModal('Primero debe realizar el taller de Reciclado'); return; }
                 const reserva = {
                     slotId,
                     institucion,
                     direccion: document.getElementById('turno-direccion').value,
+                    numero: document.getElementById('turno-numero').value,
                     esEscuela: document.getElementById('turno-es-escuela').checked,
                     tipo: document.getElementById('turno-tipo').value,
                     grado: document.getElementById('turno-grado').value,
@@ -1182,6 +1204,7 @@
                     contactoEmail: document.getElementById('turno-email').value,
                     observaciones: document.getElementById('turno-observaciones').value,
                     alumnos,
+                    acompanantes: document.getElementById('turno-acompanantes').value,
                     asistentes: document.getElementById('turno-asistentes').value,
                     userId: currentUserId,
                     dni: currentUser.dni,
