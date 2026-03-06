@@ -136,6 +136,21 @@
                     <div id="huerta-address-container" class="hidden">
                         <input type="text" id="register-huerta-address" placeholder="Dirección de la huerta/compostera" class="w-full px-4 py-2 border rounded-lg">
                     </div>
+                    <div class="p-4 border rounded-lg space-y-3">
+                        <label class="block text-gray-700 font-medium">Equipamiento disponible</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="register-proyector" class="mr-1">
+                            <label for="register-proyector">¿Cuenta con proyector?</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="register-tv" class="mr-1">
+                            <label for="register-tv">¿Cuenta con TV?</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="register-pc" class="mr-1">
+                            <label for="register-pc">¿Cuenta con PC?</label>
+                        </div>
+                    </div>
                     <button type="submit" class="w-full mt-4 brand-bg-green text-white font-bold py-3 px-4 rounded-lg hover:bg-green-800 transition-colors">Registrarme y Continuar</button>
                 </form>
             </div>
@@ -272,6 +287,7 @@
                     <button data-view="admin-news" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Noticias</button>
                     <button data-view="admin-efemerides" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Efemérides</button>
                     <button data-view="admin-enrollments" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Inscriptos</button>
+                    <button data-view="admin-personas" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Personas</button>
                 </nav>
             </div>
             <!-- Admin Dashboard View -->
@@ -351,6 +367,24 @@
                         </thead>
                         <tbody id="enrollments-table-body"></tbody>
                     </table>
+                </div>
+            </div>
+            <!-- Admin Personas View -->
+            <div id="admin-personas-view" class="hidden">
+                <h4 class="text-xl font-bold brand-green mb-4">Listado de Personas Registradas</h4>
+                <div class="mb-4">
+                    <input type="text" id="personas-search" placeholder="Buscar por nombre o DNI..." class="w-full md:w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                </div>
+                <div id="personas-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+            <!-- Person Detail Modal -->
+            <div id="persona-detail-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center z-50 p-4">
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold brand-green">Ficha de Persona</h3>
+                        <button id="close-persona-detail-modal" class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
+                    </div>
+                    <div id="persona-detail-content"></div>
                 </div>
             </div>
         </main>
@@ -1773,6 +1807,113 @@ function cancelSlotAdmin(slotId) {
             }
         }
         
+        // --- ADMIN PERSONAS ---
+        async function loadAdminPersonas() {
+            const personasList = document.getElementById('personas-list');
+            const searchInput = document.getElementById('personas-search');
+            personasList.innerHTML = '<p class="text-gray-500">Cargando...</p>';
+            const usersSnap = await getDocs(collection(db, 'artifacts', appId, 'users'));
+            const users = [];
+            usersSnap.forEach(d => users.push({ id: d.id, ...d.data() }));
+            function renderPersonas(filter = '') {
+                const filtered = users.filter(u => {
+                    const q = filter.toLowerCase();
+                    return !q || (u.name && u.name.toLowerCase().includes(q)) || (u.dni && u.dni.toLowerCase().includes(q));
+                });
+                if (filtered.length === 0) {
+                    personasList.innerHTML = '<p class="text-gray-500">No se encontraron personas.</p>';
+                    return;
+                }
+                personasList.innerHTML = filtered.map(u => `
+                    <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-green-600" data-user-id="${u.id}">
+                        <p class="font-bold text-lg brand-green">${u.name || 'Sin nombre'}</p>
+                        <p class="text-sm text-gray-600">DNI: ${u.dni || '-'}</p>
+                        <p class="text-sm text-gray-500">${u.email || ''}</p>
+                        <p class="text-sm text-gray-500">${u.phone || ''}</p>
+                    </div>
+                `).join('');
+                personasList.querySelectorAll('[data-user-id]').forEach(card => {
+                    card.addEventListener('click', () => showPersonaDetail(card.dataset.userId));
+                });
+            }
+            renderPersonas();
+            searchInput.oninput = () => renderPersonas(searchInput.value);
+        }
+
+        async function showPersonaDetail(userId) {
+            const modal = document.getElementById('persona-detail-modal');
+            const content = document.getElementById('persona-detail-content');
+            content.innerHTML = '<p class="text-gray-500">Cargando...</p>';
+            modal.style.display = 'flex';
+            try {
+                const userSnap = await getDoc(doc(db, 'artifacts', appId, 'users', userId));
+                if (!userSnap.exists()) { content.innerHTML = '<p class="text-red-500">Usuario no encontrado.</p>'; return; }
+                const u = userSnap.data();
+                // Load enrollments
+                const enrollSnap = await getDocs(collection(db, 'artifacts', appId, 'users', userId, 'enrollments'));
+                let coursesHtml = '';
+                if (enrollSnap.empty) {
+                    coursesHtml = '<p class="text-gray-500 text-sm">No está inscripto en ningún evento.</p>';
+                } else {
+                    const courseItems = [];
+                    for (const enrollDoc of enrollSnap.docs) {
+                        const courseId = enrollDoc.id;
+                        const enrollData = enrollDoc.data();
+                        let courseTitle = courseId;
+                        try {
+                            const cSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId));
+                            if (cSnap.exists()) courseTitle = cSnap.data().title;
+                        } catch(e) {}
+                        const status = enrollData.status === 'completado' ? '<span class="text-green-600 font-medium">Finalizado</span>' : '<span class="text-blue-600 font-medium">Inscripto</span>';
+                        courseItems.push(`<li class="flex justify-between items-center py-2 border-b last:border-0"><span>${courseTitle}</span>${status}</li>`);
+                    }
+                    coursesHtml = `<ul class="divide-y">${courseItems.join('')}</ul>`;
+                }
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-medium">Nombre y Apellido</p>
+                                <p class="font-semibold">${u.name || '-'}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-medium">DNI</p>
+                                <p class="font-semibold">${u.dni || '-'}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-medium">Dirección</p>
+                                <p class="font-semibold">${u.address || '-'}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-medium">Teléfono</p>
+                                <p class="font-semibold">${u.phone || '-'}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-medium">Correo Electrónico</p>
+                                <p class="font-semibold">${u.email || '-'}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500 uppercase font-medium">Huerta/Compostera</p>
+                                <p class="font-semibold">${u.hasHuerta ? 'Sí' : 'No'}${u.hasHuerta && u.huertaAddress ? ' - ' + u.huertaAddress : ''}</p>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-xs text-gray-500 uppercase font-medium mb-2">Equipamiento</p>
+                            <div class="flex flex-wrap gap-3">
+                                <span class="px-3 py-1 rounded-full text-sm ${u.hasProyector ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}">${u.hasProyector ? '✓' : '✗'} Proyector</span>
+                                <span class="px-3 py-1 rounded-full text-sm ${u.hasTv ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}">${u.hasTv ? '✓' : '✗'} TV</span>
+                                <span class="px-3 py-1 rounded-full text-sm ${u.hasPc ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'}">${u.hasPc ? '✓' : '✗'} PC</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-bold brand-green mb-2">Eventos Inscriptos</h4>
+                            ${coursesHtml}
+                        </div>
+                    </div>
+                `;
+            } catch(err) { content.innerHTML = '<p class="text-red-500">Error al cargar datos.</p>'; console.error(err); }
+        }
+
         // --- EVENT LISTENERS ---
         document.getElementById('login-form').addEventListener('submit', (e) => { e.preventDefault(); attemptLogin(document.getElementById('dni-input').value); });
         document.getElementById('register-form').addEventListener('submit', async (e) => {
@@ -1786,6 +1927,9 @@ function cancelSlotAdmin(slotId) {
                 email: document.getElementById('register-email').value,
                 hasHuerta: document.querySelector('input[name="huerta-compostera"]:checked').value === 'si',
                 huertaAddress: document.getElementById('register-huerta-address').value,
+                hasProyector: document.getElementById('register-proyector').checked,
+                hasTv: document.getElementById('register-tv').checked,
+                hasPc: document.getElementById('register-pc').checked,
                 badges: []
             };
             try {
@@ -1820,9 +1964,11 @@ function cancelSlotAdmin(slotId) {
             document.getElementById('admin-news-view').style.display = e.target.dataset.view === 'admin-news' ? 'block' : 'none';
             document.getElementById('admin-efemerides-view').style.display = e.target.dataset.view === 'admin-efemerides' ? 'block' : 'none';
             document.getElementById('admin-enrollments-view').style.display = e.target.dataset.view === 'admin-enrollments' ? 'block' : 'none';
+            document.getElementById('admin-personas-view').style.display = e.target.dataset.view === 'admin-personas' ? 'block' : 'none';
             if(e.target.dataset.view === 'admin-dashboard') loadAdminDashboard();
             if(e.target.dataset.view === 'admin-enrollments') loadAdminEnrollments();
             if(e.target.dataset.view === 'admin-efemerides') loadAdminEfemerides();
+            if(e.target.dataset.view === 'admin-personas') loadAdminPersonas();
         }));
         document.getElementById('add-course-button').addEventListener('click', () => openCourseForm());
         document.getElementById('cancel-course-form').addEventListener('click', () => courseFormModal.style.display = 'none');
@@ -1850,6 +1996,7 @@ function cancelSlotAdmin(slotId) {
             document.getElementById('turno-asistentes').max = isEscuela ? '' : 30;
         });
         document.getElementById('close-enrolled-users-modal').addEventListener('click', () => enrolledUsersModal.style.display = 'none');
+        document.getElementById('close-persona-detail-modal').addEventListener('click', () => document.getElementById('persona-detail-modal').style.display = 'none');
         document.getElementById('close-course-materials-modal').addEventListener('click', () => courseMaterialsModal.style.display = 'none');
         document.getElementById('export-turnos').addEventListener('click', () => {
             const start = document.getElementById('export-start').value;
