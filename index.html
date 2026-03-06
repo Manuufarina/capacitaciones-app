@@ -271,7 +271,7 @@
                     <button data-view="admin-turnos" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Turnera</button>
                     <button data-view="admin-news" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Noticias</button>
                     <button data-view="admin-efemerides" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Efemérides</button>
-                    <button data-view="admin-enrollments" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Inscriptos</button>
+                    <button data-view="admin-enrollments" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Personas</button>
                 </nav>
             </div>
             <!-- Admin Dashboard View -->
@@ -336,22 +336,13 @@
                 <button id="add-efemeride-button" class="mb-6 brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800 transition-colors">+ Crear Nueva Efeméride</button>
                 <div id="admin-efemerides-list" class="space-y-4"></div>
             </div>
-            <!-- Admin Enrollments View -->
+            <!-- Admin Enrollments View (Personas) -->
             <div id="admin-enrollments-view" class="hidden">
-                <h4 class="text-xl font-bold brand-green mb-4">Listado General de Inscriptos</h4>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white rounded-lg shadow">
-                        <thead class="bg-gray-200">
-                            <tr>
-                                <th class="px-4 py-2 text-left">Nombre</th>
-                                <th class="px-4 py-2 text-left">Institución</th>
-                                <th class="px-4 py-2 text-left">Huerta/Compostera</th>
-                                <th class="px-4 py-2 text-left">Evento</th>
-                            </tr>
-                        </thead>
-                        <tbody id="enrollments-table-body"></tbody>
-                    </table>
+                <h4 class="text-xl font-bold brand-green mb-4">Listado General de Personas</h4>
+                <div class="mb-4">
+                    <input type="text" id="personas-search" placeholder="Buscar por nombre o DNI..." class="w-full md:w-1/3 px-4 py-2 border rounded-lg">
                 </div>
+                <div id="personas-cards-container" class="space-y-4"></div>
             </div>
         </main>
 
@@ -605,7 +596,7 @@
        const addSlotButton = document.getElementById('add-slot-button');
        const generateMonthButton = document.getElementById('generate-month-button');
        const dashboardStats = document.getElementById('dashboard-stats');
-       const enrollmentsTableBody = document.getElementById('enrollments-table-body');
+       const personasCardsContainer = document.getElementById('personas-cards-container');
         
         // --- MOCK DATA (Only for first time setup) ---
         async function setupMockData() {
@@ -1756,21 +1747,121 @@ function cancelSlotAdmin(slotId) {
         }
 
         async function loadAdminEnrollments() {
-            enrollmentsTableBody.innerHTML = '';
+            const container = document.getElementById('personas-cards-container');
+            container.innerHTML = '<p class="text-gray-500">Cargando datos...</p>';
+            const peopleMap = {};
+            // Load all courses and their enrolled users
             const coursesSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses'));
             for (const courseDoc of coursesSnap.docs) {
-                const courseTitle = courseDoc.data().title;
+                const courseData = courseDoc.data();
                 const enrolledSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses', courseDoc.id, 'enrolledUsers'));
                 for (const userDoc of enrolledSnap.docs) {
                     const uid = userDoc.id;
-                    let userData = null;
-                    try { const uSnap = await getDoc(doc(db, 'artifacts', appId, 'users', uid)); if (uSnap.exists()) userData = uSnap.data(); } catch(err) {}
-                    const name = userData ? userData.name : userDoc.data().name;
-                    const institucion = userData ? userData.address || '' : '';
-                    const huerta = userData ? (userData.hasHuerta ? 'Sí' : 'No') : '';
-                    enrollmentsTableBody.innerHTML += `<tr class="border-t"><td class="px-4 py-2">${name}</td><td class="px-4 py-2">${institucion}</td><td class="px-4 py-2">${huerta}</td><td class="px-4 py-2">${courseTitle}</td></tr>`;
+                    if (!peopleMap[uid]) {
+                        let userData = null;
+                        try { const uSnap = await getDoc(doc(db, 'artifacts', appId, 'users', uid)); if (uSnap.exists()) userData = uSnap.data(); } catch(err) {}
+                        peopleMap[uid] = { uid, userData, enrolledName: userDoc.data().name, courses: [], turnos: [] };
+                    }
+                    peopleMap[uid].courses.push({ title: courseData.title, date: courseData.date, status: userDoc.data().status || 'inscripto' });
                 }
             }
+            // Load turnos for each user
+            const turnosSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'));
+            for (const turnoDoc of turnosSnap.docs) {
+                const t = turnoDoc.data();
+                if (t.reserved && t.reservation && t.reservation.userId) {
+                    const uid = t.reservation.userId;
+                    if (!peopleMap[uid]) {
+                        let userData = null;
+                        try { const uSnap = await getDoc(doc(db, 'artifacts', appId, 'users', uid)); if (uSnap.exists()) userData = uSnap.data(); } catch(err) {}
+                        peopleMap[uid] = { uid, userData, enrolledName: t.reservation.nombre, courses: [], turnos: [] };
+                    }
+                    peopleMap[uid].turnos.push({ date: t.date, time: t.time, reservation: t.reservation });
+                }
+            }
+            // Render cards
+            const people = Object.values(peopleMap);
+            container.innerHTML = '';
+            if (people.length === 0) { container.innerHTML = '<p class="text-gray-500">No hay personas registradas.</p>'; return; }
+            people.sort((a, b) => { const na = (a.userData ? a.userData.name : a.enrolledName) || ''; const nb = (b.userData ? b.userData.name : b.enrolledName) || ''; return na.localeCompare(nb); });
+            for (const person of people) {
+                const u = person.userData;
+                const name = u ? u.name : person.enrolledName;
+                const dni = u ? u.dni : '';
+                const address = u ? u.address : '';
+                const phone = u ? u.phone : '';
+                const email = u ? u.email : '';
+                const hasHuerta = u ? (u.hasHuerta ? 'Sí' : 'No') : '-';
+                const huertaAddr = u && u.hasHuerta ? u.huertaAddress : '';
+                // Courses section
+                let coursesHtml = '';
+                if (person.courses.length > 0) {
+                    coursesHtml = `<div class="mt-3"><h6 class="font-semibold text-sm brand-green mb-1">Eventos / Cursos inscriptos</h6><ul class="text-sm text-gray-700 list-disc list-inside">`;
+                    for (const c of person.courses) {
+                        const statusBadge = c.status === 'finalizado' ? '<span class="ml-1 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Finalizado</span>' : '<span class="ml-1 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Inscripto</span>';
+                        coursesHtml += `<li>${c.title}${c.date ? ' (' + c.date + ')' : ''} ${statusBadge}</li>`;
+                    }
+                    coursesHtml += '</ul></div>';
+                }
+                // Turnos/Schools section
+                let turnosHtml = '';
+                if (person.turnos.length > 0) {
+                    turnosHtml = `<div class="mt-3"><h6 class="font-semibold text-sm brand-green mb-1">Colegios / ECOescuelas inscriptos</h6>`;
+                    for (const t of person.turnos) {
+                        const r = t.reservation;
+                        turnosHtml += `<div class="bg-gray-50 border rounded p-2 mb-2 text-sm">
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-1">
+                                <div><span class="font-medium">Institución:</span> ${r.institucion || '-'}</div>
+                                <div><span class="font-medium">Dirección:</span> ${r.direccion || '-'} ${r.numero || ''}</div>
+                                <div><span class="font-medium">Es escuela:</span> ${r.esEscuela ? 'Sí' : 'No'}</div>
+                                <div><span class="font-medium">Tipo:</span> ${r.tipo || '-'}</div>
+                                <div><span class="font-medium">Nivel:</span> ${r.nivel || '-'}</div>
+                                <div><span class="font-medium">Grado:</span> ${r.grado || '-'}</div>
+                                <div><span class="font-medium">Taller:</span> ${r.taller || '-'}</div>
+                                <div><span class="font-medium">Referente:</span> ${r.referente || '-'}</div>
+                                <div><span class="font-medium">Teléfono:</span> ${r.telefono || '-'}</div>
+                                <div><span class="font-medium">Email contacto:</span> ${r.contactoEmail || '-'}</div>
+                                <div><span class="font-medium">Alumnos:</span> ${r.alumnos || '-'}</div>
+                                <div><span class="font-medium">Acompañantes:</span> ${r.acompanantes || '-'}</div>
+                                <div><span class="font-medium">Asistentes:</span> ${r.asistentes || '-'}</div>
+                                <div><span class="font-medium">Fecha turno:</span> ${t.date || '-'} ${t.time || ''}</div>
+                                ${r.observaciones ? `<div class="col-span-2"><span class="font-medium">Observaciones:</span> ${r.observaciones}</div>` : ''}
+                            </div>
+                        </div>`;
+                    }
+                    turnosHtml += '</div>';
+                }
+                const card = document.createElement('div');
+                card.className = 'persona-card bg-white rounded-lg shadow p-4';
+                card.dataset.name = (name || '').toLowerCase();
+                card.dataset.dni = (dni || '').toLowerCase();
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h5 class="text-lg font-bold text-gray-800">${name || 'Sin nombre'}</h5>
+                            <p class="text-sm text-gray-500">DNI: ${dni || '-'}</p>
+                        </div>
+                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">${person.courses.length} evento(s) · ${person.turnos.length} turno(s)</span>
+                    </div>
+                    <div class="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-gray-700">
+                        <div><span class="font-medium">Dirección:</span> ${address || '-'}</div>
+                        <div><span class="font-medium">Teléfono:</span> ${phone || '-'}</div>
+                        <div><span class="font-medium">Email:</span> ${email || '-'}</div>
+                        <div><span class="font-medium">Huerta/Compostera:</span> ${hasHuerta}</div>
+                        ${huertaAddr ? `<div><span class="font-medium">Dir. Huerta:</span> ${huertaAddr}</div>` : ''}
+                    </div>
+                    ${coursesHtml}
+                    ${turnosHtml}
+                `;
+                container.appendChild(card);
+            }
+            // Search filter
+            document.getElementById('personas-search').addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('.persona-card').forEach(card => {
+                    card.style.display = (card.dataset.name.includes(q) || card.dataset.dni.includes(q)) ? '' : 'none';
+                });
+            });
         }
         
         // --- EVENT LISTENERS ---
