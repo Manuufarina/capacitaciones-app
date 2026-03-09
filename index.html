@@ -338,7 +338,10 @@
             </div>
             <!-- Admin Enrollments View -->
             <div id="admin-enrollments-view" class="hidden">
-                <h4 class="text-xl font-bold brand-green mb-4">Listado General de Inscriptos</h4>
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h4 class="text-xl font-bold brand-green">Listado General de Inscriptos</h4>
+                    <button id="export-enrollments-excel" class="bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-800 text-sm">Exportar a Excel</button>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white rounded-lg shadow">
                         <thead class="bg-gray-200">
@@ -1757,19 +1760,116 @@ function cancelSlotAdmin(slotId) {
 
         async function loadAdminEnrollments() {
             enrollmentsTableBody.innerHTML = '';
+            const records = await collectAdminEnrollmentRecords();
+            records.forEach((record) => {
+                enrollmentsTableBody.innerHTML += `<tr class="border-t"><td class="px-4 py-2">${record.name}</td><td class="px-4 py-2">${record.address}</td><td class="px-4 py-2">${record.hasHuerta}</td><td class="px-4 py-2">${record.courseTitle}</td></tr>`;
+            });
+        }
+
+        function escapeSpreadsheetCell(value) {
+            const normalized = String(value ?? '').replace(/\r?\n/g, ' ').trim();
+            return `"${normalized.replace(/"/g, '""')}"`;
+        }
+
+        async function collectAdminEnrollmentRecords() {
             const coursesSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses'));
+            const courseTitleById = {};
+            coursesSnap.forEach((courseDoc) => {
+                courseTitleById[courseDoc.id] = courseDoc.data().title || '';
+            });
+
+            const userCache = new Map();
+            const userEnrollmentsCache = new Map();
+            const records = [];
+
             for (const courseDoc of coursesSnap.docs) {
-                const courseTitle = courseDoc.data().title;
-                const enrolledSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses', courseDoc.id, 'enrolledUsers'));
+                const courseId = courseDoc.id;
+                const courseTitle = courseTitleById[courseId] || '';
+                const enrolledSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses', courseId, 'enrolledUsers'));
                 for (const userDoc of enrolledSnap.docs) {
                     const uid = userDoc.id;
-                    let userData = null;
-                    try { const uSnap = await getDoc(doc(db, 'artifacts', appId, 'users', uid)); if (uSnap.exists()) userData = uSnap.data(); } catch(err) {}
-                    const name = userData ? userData.name : userDoc.data().name;
-                    const institucion = userData ? userData.address || '' : '';
-                    const huerta = userData ? (userData.hasHuerta ? 'Sí' : 'No') : '';
-                    enrollmentsTableBody.innerHTML += `<tr class="border-t"><td class="px-4 py-2">${name}</td><td class="px-4 py-2">${institucion}</td><td class="px-4 py-2">${huerta}</td><td class="px-4 py-2">${courseTitle}</td></tr>`;
+
+                    if (!userCache.has(uid)) {
+                        let profile = {};
+                        try {
+                            const uSnap = await getDoc(doc(db, 'artifacts', appId, 'users', uid));
+                            if (uSnap.exists()) profile = uSnap.data();
+                        } catch (err) {
+                            console.error('No se pudo leer perfil de usuario:', err);
+                        }
+                        userCache.set(uid, profile);
+                    }
+
+                    if (!userEnrollmentsCache.has(uid)) {
+                        const enrollmentsSnap = await getDocs(collection(db, 'artifacts', appId, 'users', uid, 'enrollments'));
+                        const userEnrollments = enrollmentsSnap.docs.map((enrollmentDoc) => {
+                            const enrollmentData = enrollmentDoc.data();
+                            const enrolledCourseTitle = courseTitleById[enrollmentDoc.id] || enrollmentDoc.id;
+                            return `${enrolledCourseTitle} (${enrollmentData.status || 'inscripto'})`;
+                        });
+                        userEnrollmentsCache.set(uid, userEnrollments);
+                    }
+
+                    const userData = userCache.get(uid) || {};
+                    records.push({
+                        name: userData.name || userDoc.data().name || '',
+                        dni: userData.dni || userDoc.data().dni || '',
+                        email: userData.email || userDoc.data().email || '',
+                        phone: userData.phone || '',
+                        address: userData.address || '',
+                        hasHuerta: userData.hasHuerta ? 'Sí' : 'No',
+                        huertaAddress: userData.huertaAddress || '',
+                        courseTitle,
+                        currentStatus: userDoc.data().status || 'inscripto',
+                        totalEnrollments: userEnrollmentsCache.get(uid).length,
+                        allEnrollments: userEnrollmentsCache.get(uid).join(' | ')
+                    });
                 }
+            }
+
+            return records;
+        }
+
+        async function exportAdminEnrollmentsToExcel() {
+            loadingSpinner.style.display = 'flex';
+            try {
+                const records = await collectAdminEnrollmentRecords();
+                if (!records.length) {
+                    showModal('No hay inscriptos para exportar.');
+                    return;
+                }
+
+                let spreadsheet = 'Nombre\tDNI\tEmail\tTeléfono\tDirección\tTiene huerta/compostera\tDirección huerta/compostera\tEvento actual\tEstado actual\tCantidad de inscripciones\tInscripciones realizadas\r\n';
+                records.forEach((record) => {
+                    spreadsheet += [
+                        record.name,
+                        record.dni,
+                        record.email,
+                        record.phone,
+                        record.address,
+                        record.hasHuerta,
+                        record.huertaAddress,
+                        record.courseTitle,
+                        record.currentStatus,
+                        record.totalEnrollments,
+                        record.allEnrollments,
+                    ].map(escapeSpreadsheetCell).join('\t') + '\r\n';
+                });
+
+                const blob = new Blob([spreadsheet], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                const dateSuffix = new Date().toISOString().slice(0, 10);
+                link.setAttribute('download', `inscriptos_completo_${dateSuffix}.xls`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            } catch (error) {
+                console.error('Error exportando inscriptos:', error);
+                showModal('Ocurrió un error al exportar los inscriptos.');
+            } finally {
+                loadingSpinner.style.display = 'none';
             }
         }
         
@@ -1856,6 +1956,7 @@ function cancelSlotAdmin(slotId) {
             const end = document.getElementById('export-end').value;
             exportTurnosCSV(start, end);
         });
+        document.getElementById('export-enrollments-excel').addEventListener('click', exportAdminEnrollmentsToExcel);
         document.getElementById('cancel-confirmation-button').addEventListener('click', () => { confirmationModal.style.display = 'none'; actionToConfirm = null; });
         document.getElementById('confirm-action-button').addEventListener('click', () => { if (typeof actionToConfirm === 'function') { actionToConfirm(); } confirmationModal.style.display = 'none'; actionToConfirm = null; });
 
