@@ -42,6 +42,8 @@ app.post('/api/send-email', async (req, res) => {
             <p>Atentamente,</p>
             <p><strong>Dirección de Ambiente - Municipalidad de San Isidro</strong></p>
             <img src="${logoUrl}" alt="Logo San Isidro" style="width: 150px; height: auto;" />
+            <br><br>
+            <p style="color: green; font-weight: bold;">NO CONTESTAR A ESTE MAIL. CONSULTAS O CANCELACIONES ESCRIBIR AL MAIL Ambiente@sanisidro.gob.ar</p>
         </div>
     `;
 

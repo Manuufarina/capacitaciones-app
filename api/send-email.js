@@ -35,6 +35,8 @@ module.exports = async (req, res) => {
       <p>Atentamente,</p>
       <p><b>Dirección de Ambiente - Municipalidad de San Isidro</b></p>
       <img src="${logoUrl}" alt="Logo San Isidro" style="width: 150px; height: auto;"/>
+      <br><br>
+      <p style="color: green; font-weight: bold;">NO CONTESTAR A ESTE MAIL. CONSULTAS O CANCELACIONES ESCRIBIR AL MAIL Ambiente@sanisidro.gob.ar</p>
     </div>
   `;
 
