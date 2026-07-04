@@ -149,6 +149,7 @@
                     <button id="tab-news" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Noticias</button>
                     <button id="tab-calendar" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Calendario</button>
                     <button id="tab-turnos" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Turnos ECOescuelas</button>
+                    <button id="tab-campanas" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Campañas</button>
                     <button id="tab-available" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg border-b-4 brand-border-green brand-green">Eventos</button>
                     <button id="tab-my-inscriptions" class="tab-button px-3 py-3 whitespace-nowrap font-medium text-base md:text-lg text-gray-500 hover:text-gray-700">Mis Inscripciones</button>
                 </nav>
@@ -250,6 +251,39 @@
                 <div id="mis-turnos-list" class="space-y-4 mt-4"></div>
             </div>
 
+            <!-- Campañas View -->
+            <div id="view-campanas" class="hidden">
+                <h3 class="text-3xl font-bold mb-6 brand-green">Campañas de Recolección de Residuos Especiales</h3>
+                <p class="mb-6 text-gray-600">Su institución puede solicitar una campaña de recolección de Residuos Electrónicos o de Aceite Vegetal Usado. La solicitud será revisada por el equipo de la Dirección de Ambiente y recibirá un correo con la respuesta.</p>
+                <form id="campana-form" class="space-y-4 mb-8">
+                    <select id="campana-tipo" class="w-full px-4 py-2 border rounded-lg" required>
+                        <option value="" disabled selected>Tipo de campaña</option>
+                        <option value="Residuos Electrónicos">Residuos Electrónicos</option>
+                        <option value="Aceite Vegetal Usado">Aceite Vegetal Usado</option>
+                    </select>
+                    <input type="text" id="campana-institucion" placeholder="Nombre de la institución" class="w-full px-4 py-2 border rounded-lg" required>
+                    <select id="campana-tipo-institucion" class="w-full px-4 py-2 border rounded-lg" required>
+                        <option value="" disabled selected>Tipo de institución</option>
+                        <option value="Pública">Pública</option>
+                        <option value="Privada">Privada</option>
+                    </select>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label class="block text-sm text-gray-600">Fecha de inicio de campaña
+                            <input type="date" id="campana-inicio" class="w-full px-4 py-2 border rounded-lg mt-1" required>
+                        </label>
+                        <label class="block text-sm text-gray-600">Fecha de cierre de campaña
+                            <input type="date" id="campana-cierre" class="w-full px-4 py-2 border rounded-lg mt-1" required>
+                        </label>
+                    </div>
+                    <input type="text" id="campana-direccion" placeholder="Dirección para recibir el contenedor" class="w-full px-4 py-2 border rounded-lg" required>
+                    <input type="text" id="campana-responsable" placeholder="Nombre del responsable" class="w-full px-4 py-2 border rounded-lg" required>
+                    <input type="tel" id="campana-telefono" placeholder="Número del responsable" class="w-full px-4 py-2 border rounded-lg" required>
+                    <button type="submit" class="w-full brand-bg-green text-white font-bold py-2 px-4 rounded-lg hover:bg-green-800">Solicitar Campaña</button>
+                </form>
+                <h4 class="text-xl font-bold brand-green">Mis Campañas</h4>
+                <div id="mis-campanas-list" class="space-y-4 mt-4"></div>
+            </div>
+
             <!-- News View -->
             <div id="view-news" class="hidden">
                 <h3 class="text-3xl font-bold mb-6 brand-green">Noticias Ambientales</h3>
@@ -269,6 +303,7 @@
                     <button data-view="admin-dashboard" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Dashboard</button>
                     <button data-view="admin-courses" class="admin-tab-button px-4 py-2 font-medium border-b-4 brand-border-green brand-green">Gestionar Eventos</button>
                     <button data-view="admin-turnos" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Turnera</button>
+                    <button data-view="admin-campanas" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Campañas</button>
                     <button data-view="admin-news" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Noticias</button>
                     <button data-view="admin-efemerides" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Gestionar Efemérides</button>
                     <button data-view="admin-enrollments" class="admin-tab-button px-4 py-2 font-medium text-gray-500">Inscriptos</button>
@@ -311,7 +346,7 @@
                         <div class="flex flex-wrap items-end gap-2">
                             <input type="date" id="export-start" class="border px-2 py-1 rounded" />
                             <input type="date" id="export-end" class="border px-2 py-1 rounded" />
-                            <button id="export-turnos" class="bg-blue-600 text-white px-2 py-1 rounded text-sm">Descargar CSV</button>
+                            <button id="export-turnos" class="bg-blue-600 text-white px-2 py-1 rounded text-sm">Descargar Excel</button>
                         </div>
                         <div id="admin-turnos-reserved" class="space-y-4"></div>
                     </div>
@@ -325,6 +360,17 @@
                         <div id="admin-turnos-free" class="space-y-4"></div>
                     </div>
                 </div>
+            </div>
+            <!-- Admin Campañas View -->
+            <div id="admin-campanas-view" class="hidden">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h4 class="text-xl font-bold brand-green">Solicitudes de Campañas de Recolección</h4>
+                    <button id="export-campanas-excel" class="bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-800 text-sm">Exportar a Excel</button>
+                </div>
+                <h5 class="font-bold text-lg mb-2 text-yellow-700">Pendientes de aprobación</h5>
+                <div id="admin-campanas-pendientes" class="space-y-4 mb-8"></div>
+                <h5 class="font-bold text-lg mb-2 brand-green">Historial</h5>
+                <div id="admin-campanas-historial" class="space-y-4"></div>
             </div>
             <!-- Admin News View -->
             <div id="admin-news-view" class="hidden">
@@ -576,12 +622,14 @@
         let userEnrollments = {}; // Track user enrollments
         let actionToConfirm = null; // For confirmation modal
         let enrollChart = null;
+        let unsubscribeUserCampanas = null;
+        const MIN_ANTICIPACION_MS = 7 * 24 * 60 * 60 * 1000; // Los turnos se solicitan con al menos una semana de anticipación
 
         // --- DOM ELEMENTS ---
         const loadingSpinner = document.getElementById('loading-spinner');
         const sections = { login: document.getElementById('login-section'), register: document.getElementById('register-section'), main: document.getElementById('main-app-section'), admin: document.getElementById('admin-section') };
-        const views = { available: document.getElementById('view-available-courses'), calendar: document.getElementById('view-calendar'), myInscriptions: document.getElementById('view-my-inscriptions'), turnos: document.getElementById('view-turnos'), news: document.getElementById('view-news') };
-        const tabs = { available: document.getElementById('tab-available'), calendar: document.getElementById('tab-calendar'), myInscriptions: document.getElementById('tab-my-inscriptions'), turnos: document.getElementById('tab-turnos'), news: document.getElementById('tab-news') };
+        const views = { available: document.getElementById('view-available-courses'), calendar: document.getElementById('view-calendar'), myInscriptions: document.getElementById('view-my-inscriptions'), turnos: document.getElementById('view-turnos'), campanas: document.getElementById('view-campanas'), news: document.getElementById('view-news') };
+        const tabs = { available: document.getElementById('tab-available'), calendar: document.getElementById('tab-calendar'), myInscriptions: document.getElementById('tab-my-inscriptions'), turnos: document.getElementById('tab-turnos'), campanas: document.getElementById('tab-campanas'), news: document.getElementById('tab-news') };
         const userInfoDiv = document.getElementById('user-info');
         const welcomeMessage = document.getElementById('welcome-message');
         const courseFormModal = document.getElementById('course-form-modal');
@@ -609,6 +657,10 @@
        const generateMonthButton = document.getElementById('generate-month-button');
        const dashboardStats = document.getElementById('dashboard-stats');
        const enrollmentsTableBody = document.getElementById('enrollments-table-body');
+       const campanaForm = document.getElementById('campana-form');
+       const misCampanasList = document.getElementById('mis-campanas-list');
+       const adminCampanasPendientes = document.getElementById('admin-campanas-pendientes');
+       const adminCampanasHistorial = document.getElementById('admin-campanas-historial');
         
         // --- MOCK DATA (Only for first time setup) ---
         async function setupMockData() {
@@ -668,6 +720,46 @@
             document.getElementById('confirmation-message').textContent = message;
             actionToConfirm = onConfirm;
             confirmationModal.style.display = 'flex';
+        }
+
+        // --- GOOGLE CALENDAR HELPERS ---
+        function buildGoogleCalendarLink(title, date, time, durationMinutes, details, location) {
+            const start = new Date(`${date}T${time}`);
+            const end = new Date(start.getTime() + durationMinutes * 60000);
+            const fmt = d => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}00`;
+            const params = new URLSearchParams({
+                action: 'TEMPLATE',
+                text: title,
+                dates: `${fmt(start)}/${fmt(end)}`,
+                details: details || '',
+                location: location || '',
+                ctz: 'America/Argentina/Buenos_Aires'
+            });
+            return `https://calendar.google.com/calendar/render?${params.toString()}`;
+        }
+
+        async function createCalendarEvent(details) {
+            try {
+                const response = await fetch('/api/calendar-event', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'create', ...details })
+                });
+                if (!response.ok) return null;
+                const data = await response.json();
+                return data.eventId || null;
+            } catch (e) { console.error('calendar', e); return null; }
+        }
+
+        async function deleteCalendarEvent(eventId) {
+            if (!eventId) return;
+            try {
+                await fetch('/api/calendar-event', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete', eventId })
+                });
+            } catch (e) { console.error('calendar', e); }
         }
 
         // --- AUTHENTICATION & INITIAL LOAD ---
@@ -843,6 +935,7 @@
             await loadMyInscriptions();
             await loadAvailableTurnos();
             await loadUserTurnos();
+            loadUserCampanas();
         }
 
         function createCourseCard(course) {
@@ -1082,13 +1175,13 @@
         async function loadAvailableTurnos() {
             turnoSlotSelect.innerHTML = '';
             const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'));
-            const now = new Date();
+            const minDate = new Date(Date.now() + MIN_ANTICIPACION_MS);
             const available = snapshot.docs
                 .filter(docSnap => {
                     const data = docSnap.data();
                     if (data.reserved) return false;
                     const slotDate = new Date(`${data.date}T${data.time}`);
-                    return slotDate >= now;
+                    return slotDate >= minDate;
                 })
                 .sort((a, b) => {
                     const da = a.data();
@@ -1104,7 +1197,7 @@
             });
             if (available.length === 0) {
                 const opt = document.createElement('option');
-                opt.textContent = 'No hay turnos futuros disponibles';
+                opt.textContent = 'No hay turnos disponibles (se solicitan con al menos una semana de anticipación)';
                 opt.disabled = true; opt.selected = true;
                 turnoSlotSelect.appendChild(opt);
             }
@@ -1155,10 +1248,15 @@
                     statusHTML = `<button data-slot="${turno.id}" class="cancel-turno-button bg-red-600 text-white p-2 rounded-lg text-sm">Cancelar</button>`;
                 }
 
+                let gcalHTML = '';
+                if (hoursUntil >= 0) {
+                    const gcalLink = buildGoogleCalendarLink(`Taller ECOescuelas - ${turno.institucion}`, turno.slot.date, turno.slot.time, 120, `Institución: ${turno.institucion}`, turno.direccion || '');
+                    gcalHTML = `<a href="${gcalLink}" target="_blank" class="bg-blue-600 text-white p-2 rounded-lg text-sm hover:bg-blue-700">Agregar a Google Calendar</a>`;
+                }
                 html += `
-                    <div class="${cardClass} p-4 rounded-lg shadow flex justify-between items-center">
+                    <div class="${cardClass} p-4 rounded-lg shadow flex flex-col md:flex-row justify-between md:items-center gap-2">
                         <span>${turno.slot.date} ${turno.slot.time} - ${turno.institucion}</span>
-                        ${statusHTML}
+                        <div class="flex items-center gap-2">${gcalHTML}${statusHTML}</div>
                     </div>`;
             });
 
@@ -1179,6 +1277,7 @@
                 const slotData = slotSnap.data();
                 const slotDateTime = new Date(`${slotData.date}T${slotData.time}`);
                 if (slotDateTime < new Date()) { showModal('No es posible reservar un turno que ya pasó'); return; }
+                if (slotDateTime.getTime() - Date.now() < MIN_ANTICIPACION_MS) { showModal('Los turnos deben solicitarse con al menos una semana de anticipación'); return; }
                 const institucion = document.getElementById('turno-institucion').value;
                 const alumnos = parseInt(document.getElementById('turno-alumnos').value || '0');
                 if (alumnos > 30) { showModal('El n\u00famero m\u00e1ximo de alumnos es 30'); return; }
@@ -1217,11 +1316,33 @@
                 };
                 await updateDoc(slotRef, { reserved: true, reservation: reserva });
                 await setDoc(doc(db, 'artifacts', appId, 'users', currentUserId, 'turnos', slotId), reserva);
+                const eventDetails = [
+                    `Institución: ${reserva.institucion}`,
+                    reserva.esEscuela ? `Taller: ${reserva.taller} · Nivel: ${reserva.nivel} · Grado: ${reserva.grado}` : '',
+                    reserva.referente ? `Referente: ${reserva.referente}` : '',
+                    `Teléfono: ${reserva.telefono}`,
+                    `Asistentes: ${reserva.asistentes}`
+                ].filter(Boolean).join('\n');
+                try {
+                    const calendarEventId = await createCalendarEvent({
+                        summary: `ECOescuelas: ${reserva.institucion}`,
+                        description: eventDetails,
+                        location: reserva.direccion,
+                        date: slotData.date,
+                        time: slotData.time,
+                        durationMinutes: 120
+                    });
+                    if (calendarEventId) {
+                        await updateDoc(slotRef, { 'reservation.calendarEventId': calendarEventId });
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', currentUserId, 'turnos', slotId), { calendarEventId });
+                    }
+                } catch (calErr) { console.error('No se pudo sincronizar con Google Calendar:', calErr); }
                 turnoForm.reset();
                 datosEscuelaDiv.style.display = 'none';
                 const formattedDate = slotDateTime.toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' });
                 const formattedTime = slotDateTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
-                const msgTurno = `Su turno ECOescuelas fue reservado para el ${formattedDate} a las ${formattedTime}. Institución: ${reserva.institucion}. Dirección: ${reserva.direccion}. Recibirá un recordatorio el día anterior y un correo de agradecimiento luego de la visita.`;
+                const calendarLink = buildGoogleCalendarLink(`Taller ECOescuelas - ${reserva.institucion}`, slotData.date, slotData.time, 120, eventDetails, reserva.direccion);
+                const msgTurno = `Su turno ECOescuelas fue reservado para el ${formattedDate} a las ${formattedTime}. Institución: ${reserva.institucion}. Dirección: ${reserva.direccion}. Puede agregarlo a su Google Calendar desde este enlace: ${calendarLink} — Recibirá un recordatorio el día anterior y un correo de agradecimiento luego de la visita.`;
                 const notifications = [];
                 if (currentUser.email) notifications.push({ email: currentUser.email, name: currentUser.name });
                 if (reserva.contactoEmail && reserva.contactoEmail !== currentUser.email) {
@@ -1241,13 +1362,161 @@
             const slot = slotSnap.data();
             const slotDate = new Date(`${slot.date}T${slot.time}`);
             if ((slotDate - new Date())/3600000 < 24) { showModal('No puede cancelar con menos de 24h de anticipación'); return; }
+            if (slot.reservation && slot.reservation.calendarEventId) { await deleteCalendarEvent(slot.reservation.calendarEventId); }
             await updateDoc(slotRef, { reserved: false, reservation: null });
             await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUserId, 'turnos', id));
             showModal('Turno cancelado');
         }
 
+        // --- CAMPAÑAS FUNCTIONS ---
+        function formatFechaCampana(fecha) {
+            if (!fecha) return '';
+            return new Date(fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' });
+        }
+
+        const campanaEstadoBadges = {
+            pendiente: '<span class="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full uppercase">Pendiente</span>',
+            aprobada: '<span class="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-full uppercase">Aprobada</span>',
+            rechazada: '<span class="text-xs font-semibold text-red-700 bg-red-100 px-2 py-1 rounded-full uppercase">Rechazada</span>'
+        };
+
+        function campanaResumenHTML(c) {
+            return `<p class="font-semibold text-gray-700">${c.tipoCampana} - ${c.institucion} (${c.tipoInstitucion})</p>
+                <p class="text-sm text-gray-500">Del ${formatFechaCampana(c.fechaInicio)} al ${formatFechaCampana(c.fechaCierre)} · Contenedor en: ${c.direccion}</p>
+                <p class="text-sm text-gray-500">Responsable: ${c.responsableNombre} · Tel: ${c.responsableTelefono}</p>`;
+        }
+
+        async function handleCampanaSubmit(e) {
+            e.preventDefault();
+            if (!currentUserId) { showModal('Debe iniciar sesión'); return; }
+            const fechaInicio = document.getElementById('campana-inicio').value;
+            const fechaCierre = document.getElementById('campana-cierre').value;
+            const hoy = new Date().toISOString().split('T')[0];
+            if (fechaInicio < hoy) { showModal('La fecha de inicio de la campaña no puede ser anterior a hoy'); return; }
+            if (fechaCierre < fechaInicio) { showModal('La fecha de cierre no puede ser anterior a la fecha de inicio'); return; }
+            const campana = {
+                tipoCampana: document.getElementById('campana-tipo').value,
+                institucion: document.getElementById('campana-institucion').value,
+                tipoInstitucion: document.getElementById('campana-tipo-institucion').value,
+                fechaInicio,
+                fechaCierre,
+                direccion: document.getElementById('campana-direccion').value,
+                responsableNombre: document.getElementById('campana-responsable').value,
+                responsableTelefono: document.getElementById('campana-telefono').value,
+                userId: currentUserId,
+                dni: currentUser.dni,
+                nombre: currentUser.name,
+                email: currentUser.email,
+                estado: 'pendiente',
+                timestamp: new Date().toISOString()
+            };
+            loadingSpinner.style.display = 'flex';
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'campanas'), campana);
+                campanaForm.reset();
+                const msg = `Su solicitud de campaña de recolección de ${campana.tipoCampana} para "${campana.institucion}" (del ${formatFechaCampana(fechaInicio)} al ${formatFechaCampana(fechaCierre)}) fue recibida y está pendiente de aprobación. Le avisaremos por correo cuando el equipo de Ambiente la revise.`;
+                await sendEmail(campana.email, 'Solicitud de campaña recibida', msg, campana.nombre);
+                showModal('Solicitud enviada. Recibirá un correo cuando el equipo de Ambiente la revise.');
+            } catch (error) {
+                console.error('Error solicitando campaña:', error);
+                showModal('No se pudo enviar la solicitud de campaña.');
+            } finally { loadingSpinner.style.display = 'none'; }
+        }
+
+        function loadUserCampanas() {
+            if (!currentUserId) return;
+            if (unsubscribeUserCampanas) unsubscribeUserCampanas();
+            const qCampanas = query(collection(db, 'artifacts', appId, 'public', 'data', 'campanas'), where('userId', '==', currentUserId));
+            unsubscribeUserCampanas = onSnapshot(qCampanas, (snapshot) => {
+                if (snapshot.empty) { misCampanasList.innerHTML = '<p>No tiene campañas solicitadas.</p>'; return; }
+                const campanas = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+                misCampanasList.innerHTML = campanas.map(c => `
+                    <div class="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row justify-between md:items-center gap-2">
+                        <div>${campanaResumenHTML(c)}</div>
+                        <div>${campanaEstadoBadges[c.estado] || campanaEstadoBadges.pendiente}</div>
+                    </div>`).join('');
+            });
+        }
+
+        function loadAdminCampanas() {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'campanas'), (snapshot) => {
+                const campanas = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+                const pendientes = campanas.filter(c => c.estado === 'pendiente');
+                const resueltas = campanas.filter(c => c.estado !== 'pendiente');
+                adminCampanasPendientes.innerHTML = pendientes.length ? pendientes.map(c => `
+                    <div class="bg-white border border-yellow-200 rounded-lg px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <div>${campanaResumenHTML(c)}<p class="text-sm text-gray-500">Solicitado por ${c.nombre} (${c.email}) el ${formatFechaCampana((c.timestamp || '').slice(0, 10))}</p></div>
+                        <div class="flex space-x-2">
+                            <button data-campana-id="${c.id}" class="approve-campana-button bg-green-600 text-white px-3 py-1 rounded-lg text-sm">Aprobar</button>
+                            <button data-campana-id="${c.id}" class="reject-campana-button bg-red-600 text-white px-3 py-1 rounded-lg text-sm">Rechazar</button>
+                        </div>
+                    </div>`).join('') : '<p class="text-sm text-gray-500">No hay solicitudes pendientes.</p>';
+                adminCampanasHistorial.innerHTML = resueltas.length ? resueltas.map(c => `
+                    <div class="bg-white border border-gray-200 rounded-lg px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <div>${campanaResumenHTML(c)}<p class="text-sm text-gray-500">Solicitado por ${c.nombre} (${c.email})</p></div>
+                        <div>${campanaEstadoBadges[c.estado] || ''}</div>
+                    </div>`).join('') : '<p class="text-sm text-gray-500">Aún no hay campañas resueltas.</p>';
+                document.querySelectorAll('.approve-campana-button').forEach(b => b.onclick = (e) => confirmResolveCampana(e.target.dataset.campanaId, 'aprobada'));
+                document.querySelectorAll('.reject-campana-button').forEach(b => b.onclick = (e) => confirmResolveCampana(e.target.dataset.campanaId, 'rechazada'));
+            });
+        }
+
+        function confirmResolveCampana(campanaId, estado) {
+            const accion = estado === 'aprobada' ? 'aprobar' : 'rechazar';
+            showConfirmationModal(`¿Está seguro que desea ${accion} esta solicitud de campaña? Se notificará por correo a la institución.`, () => resolveCampana(campanaId, estado));
+        }
+
+        async function resolveCampana(campanaId, estado) {
+            loadingSpinner.style.display = 'flex';
+            try {
+                const campanaRef = doc(db, 'artifacts', appId, 'public', 'data', 'campanas', campanaId);
+                const snap = await getDoc(campanaRef);
+                if (!snap.exists()) { showModal('La solicitud ya no existe.'); return; }
+                const c = snap.data();
+                await updateDoc(campanaRef, { estado, resueltaEl: new Date().toISOString() });
+                const periodo = `del ${formatFechaCampana(c.fechaInicio)} al ${formatFechaCampana(c.fechaCierre)}`;
+                const msg = estado === 'aprobada'
+                    ? `Su solicitud de campaña de recolección de ${c.tipoCampana} para "${c.institucion}" (${periodo}) fue APROBADA. El contenedor será entregado en ${c.direccion}. Ante cualquier consulta responda este correo.`
+                    : `Su solicitud de campaña de recolección de ${c.tipoCampana} para "${c.institucion}" (${periodo}) fue RECHAZADA. Ante cualquier consulta responda este correo.`;
+                await sendEmail(c.email, estado === 'aprobada' ? 'Campaña aprobada' : 'Campaña rechazada', msg, c.nombre);
+                showModal(`Solicitud ${estado}. Se notificó a la institución por correo.`);
+            } catch (error) {
+                console.error('Error resolviendo campaña:', error);
+                showModal('No se pudo actualizar la solicitud.');
+            } finally { loadingSpinner.style.display = 'none'; }
+        }
+
+        async function exportCampanasExcel() {
+            loadingSpinner.style.display = 'flex';
+            try {
+                const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'campanas'));
+                if (snapshot.empty) { showModal('No hay campañas para exportar.'); return; }
+                const campanas = snapshot.docs.map(d => d.data()).sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
+                let spreadsheet = 'Tipo de campaña\tInstitución\tTipo\tFecha inicio\tFecha cierre\tDirección contenedor\tResponsable\tTeléfono\tSolicitante\tEmail\tEstado\tFecha de solicitud\r\n';
+                campanas.forEach(c => {
+                    spreadsheet += [
+                        c.tipoCampana, c.institucion, c.tipoInstitucion, c.fechaInicio, c.fechaCierre,
+                        c.direccion, c.responsableNombre, c.responsableTelefono,
+                        c.nombre, c.email, c.estado, (c.timestamp || '').slice(0, 10)
+                    ].map(escapeSpreadsheetCell).join('\t') + '\r\n';
+                });
+                const blob = new Blob([spreadsheet], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                const dateSuffix = new Date().toISOString().slice(0, 10);
+                link.setAttribute('download', `campanas_${dateSuffix}.xls`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            } catch (error) {
+                console.error('Error exportando campañas:', error);
+                showModal('Ocurrió un error al exportar las campañas.');
+            } finally { loadingSpinner.style.display = 'none'; }
+        }
+
         // --- ADMIN FUNCTIONS ---
-        function showAdminPanel() { isAdminLoggedIn = true; showSection('admin'); loadAdminCourses(); loadAdminNews(); loadAdminTurnos(); loadAdminDashboard(); }
+        function showAdminPanel() { isAdminLoggedIn = true; showSection('admin'); loadAdminCourses(); loadAdminNews(); loadAdminTurnos(); loadAdminCampanas(); loadAdminDashboard(); }
         function loadAdminCourses() {
             const adminCoursesListDiv = document.getElementById('admin-courses-list');
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), (snapshot) => {
@@ -1378,24 +1647,65 @@
             document.body.removeChild(link);
         }
 
-        async function exportTurnosCSV(startDate, endDate) {
-            const qSnapshot = await getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('reserved', '==', true)));
-            let csv = 'data:text/csv;charset=utf-8,Fecha,Hora,Institucion,Direccion,Telefono,Email,Alumnos,Asistentes\r\n';
-            qSnapshot.forEach(docSnap => {
-                const t = docSnap.data();
-                const r = t.reservation;
-                if (!r) return;
-                const ts = r.timestamp || '';
-                if (startDate && ts < startDate) return;
-                if (endDate && ts > endDate + 'T23:59') return;
-                csv += `${t.date},${t.time},"${r.institucion}","${r.direccion}","${r.telefono}","${r.contactoEmail}",${r.alumnos || ''},${r.asistentes}\r\n`;
-            });
-            const link = document.createElement('a');
-            link.setAttribute('href', encodeURI(csv));
-            link.setAttribute('download', 'turnos.csv');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        async function exportTurnosExcel(startDate, endDate) {
+            loadingSpinner.style.display = 'flex';
+            try {
+                const qSnapshot = await getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'), where('reserved', '==', true)));
+                const rows = [];
+                qSnapshot.forEach(docSnap => {
+                    const t = docSnap.data();
+                    const r = t.reservation;
+                    if (!r) return;
+                    const ts = r.timestamp || '';
+                    if (startDate && ts < startDate) return;
+                    if (endDate && ts > endDate + 'T23:59') return;
+                    const escuela = valor => r.esEscuela ? valor : '';
+                    rows.push([
+                        t.date,
+                        t.time,
+                        r.institucion,
+                        r.direccion,
+                        r.esEscuela ? 'Sí' : 'No',
+                        escuela(r.tipo),
+                        escuela(r.nivel),
+                        escuela(r.grado),
+                        escuela(r.taller),
+                        r.numero,
+                        r.alumnos,
+                        r.acompanantes,
+                        r.asistentes,
+                        r.referente,
+                        r.telefono,
+                        r.contactoEmail,
+                        r.observaciones,
+                        r.nombre,
+                        r.dni,
+                        r.email,
+                        ts ? ts.slice(0, 10) : ''
+                    ]);
+                });
+                if (!rows.length) {
+                    showModal('No hay turnos tomados para exportar en ese rango.');
+                    return;
+                }
+                rows.sort((a, b) => (a[0] + a[1]).localeCompare(b[0] + b[1]));
+                let spreadsheet = 'Fecha turno\tHora\tInstitución\tDirección\t¿Es escuela?\tTipo\tNivel\tGrado\tTaller\tNúmero\tCantidad de alumnos\tAcompañantes\tAsistentes\tReferente\tTeléfono\tEmail de contacto\tObservaciones\tSolicitante\tDNI\tEmail solicitante\tFecha de solicitud\r\n';
+                rows.forEach(row => { spreadsheet += row.map(escapeSpreadsheetCell).join('\t') + '\r\n'; });
+                const blob = new Blob([spreadsheet], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                const dateSuffix = new Date().toISOString().slice(0, 10);
+                link.setAttribute('download', `turnos_${dateSuffix}.xls`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            } catch (error) {
+                console.error('Error exportando turnos:', error);
+                showModal('Ocurrió un error al exportar los turnos.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
         }
         function loadAdminNews() {
             const adminNewsListDiv = document.getElementById('admin-news-list');
@@ -1709,6 +2019,7 @@ function cancelSlotAdmin(slotId) {
                     const snap = await getDoc(slotRef);
                     if (snap.exists() && snap.data().reserved) {
                         const r = snap.data().reservation;
+                        if (r && r.calendarEventId) { await deleteCalendarEvent(r.calendarEventId); }
                         await updateDoc(slotRef, { reserved: false, reservation: null });
                         if (r && r.userId) {
                             await deleteDoc(doc(db, 'artifacts', appId, 'users', r.userId, 'turnos', slotId));
@@ -1917,6 +2228,7 @@ function cancelSlotAdmin(slotId) {
             document.getElementById('admin-dashboard-view').style.display = e.target.dataset.view === 'admin-dashboard' ? 'block' : 'none';
             document.getElementById('admin-courses-view').style.display = e.target.dataset.view === 'admin-courses' ? 'block' : 'none';
             document.getElementById('admin-turnos-view').style.display = e.target.dataset.view === 'admin-turnos' ? 'block' : 'none';
+            document.getElementById('admin-campanas-view').style.display = e.target.dataset.view === 'admin-campanas' ? 'block' : 'none';
             document.getElementById('admin-news-view').style.display = e.target.dataset.view === 'admin-news' ? 'block' : 'none';
             document.getElementById('admin-efemerides-view').style.display = e.target.dataset.view === 'admin-efemerides' ? 'block' : 'none';
             document.getElementById('admin-enrollments-view').style.display = e.target.dataset.view === 'admin-enrollments' ? 'block' : 'none';
@@ -1954,9 +2266,11 @@ function cancelSlotAdmin(slotId) {
         document.getElementById('export-turnos').addEventListener('click', () => {
             const start = document.getElementById('export-start').value;
             const end = document.getElementById('export-end').value;
-            exportTurnosCSV(start, end);
+            exportTurnosExcel(start, end);
         });
         document.getElementById('export-enrollments-excel').addEventListener('click', exportAdminEnrollmentsToExcel);
+        campanaForm.addEventListener('submit', handleCampanaSubmit);
+        document.getElementById('export-campanas-excel').addEventListener('click', exportCampanasExcel);
         document.getElementById('cancel-confirmation-button').addEventListener('click', () => { confirmationModal.style.display = 'none'; actionToConfirm = null; });
         document.getElementById('confirm-action-button').addEventListener('click', () => { if (typeof actionToConfirm === 'function') { actionToConfirm(); } confirmationModal.style.display = 'none'; actionToConfirm = null; });
 

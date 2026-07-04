@@ -78,4 +78,6 @@ app.post('/api/send-email', async (req, res) => {
     }
 });
 
+app.post('/api/calendar-event', require('./api/calendar-event'));
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
