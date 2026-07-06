@@ -2133,7 +2133,7 @@ function cancelSlotAdmin(slotId) {
                         courseTitle,
                         currentStatus: userDoc.data().status || 'inscripto',
                         totalEnrollments: userEnrollmentsCache.get(uid).length,
-                        enrollments: [...userEnrollmentsCache.get(uid)]
+                        allEnrollments: userEnrollmentsCache.get(uid).join(' | ')
                     });
                 }
             }
@@ -2144,40 +2144,97 @@ function cancelSlotAdmin(slotId) {
         async function exportAdminEnrollmentsToExcel() {
             loadingSpinner.style.display = 'flex';
             try {
-                const records = await collectAdminEnrollmentRecords();
-                if (!records.length) {
+                const peopleMap = {};
+                const ensurePerson = async (uid, fallbackName) => {
+                    if (!peopleMap[uid]) {
+                        let userData = null;
+                        try {
+                            const uSnap = await getDoc(doc(db, 'artifacts', appId, 'users', uid));
+                            if (uSnap.exists()) userData = uSnap.data();
+                        } catch (err) {
+                            console.error('No se pudo leer perfil de usuario:', err);
+                        }
+                        peopleMap[uid] = { userData, enrolledName: fallbackName || '', courses: [], turnos: [] };
+                    }
+                    return peopleMap[uid];
+                };
+
+                const coursesSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses'));
+                for (const courseDoc of coursesSnap.docs) {
+                    const courseData = courseDoc.data();
+                    const enrolledSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'courses', courseDoc.id, 'enrolledUsers'));
+                    for (const userDoc of enrolledSnap.docs) {
+                        const person = await ensurePerson(userDoc.id, userDoc.data().name);
+                        person.courses.push({ title: courseData.title, date: courseData.date, status: userDoc.data().status || 'inscripto' });
+                    }
+                }
+
+                const turnosSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'turnos'));
+                for (const turnoDoc of turnosSnap.docs) {
+                    const t = turnoDoc.data();
+                    if (t.reserved && t.reservation && t.reservation.userId) {
+                        const person = await ensurePerson(t.reservation.userId, t.reservation.nombre);
+                        person.turnos.push({ date: t.date, time: t.time, reservation: t.reservation });
+                    }
+                }
+
+                const people = Object.values(peopleMap);
+                if (!people.length) {
                     showModal('No hay inscriptos para exportar.');
                     return;
                 }
+                people.sort((a, b) => (((a.userData && a.userData.name) || a.enrolledName || '')).localeCompare(((b.userData && b.userData.name) || b.enrolledName || '')));
 
-                const maxEnrollments = records.reduce((max, record) => Math.max(max, record.enrollments.length), 0);
-                const headers = ['Nombre', 'DNI', 'Email', 'Teléfono', 'Dirección', 'Tiene huerta/compostera', 'Dirección huerta/compostera', 'Evento actual', 'Estado actual', 'Cantidad de inscripciones'];
-                for (let i = 1; i <= maxEnrollments; i++) headers.push(`Inscripción ${i}`);
+                const maxTurnos = people.reduce((max, person) => Math.max(max, person.turnos.length), 0);
+                const turnoFields = ['Institución', 'Charla', 'Fecha', 'Hora', 'Tipo', 'Nivel', 'Grado', 'Referente', 'Teléfono', 'Email', 'Alumnos', 'Acompañantes', 'Asistentes', 'Observaciones'];
+                const headers = ['Nombre', 'DNI', 'Dirección', 'Teléfono', 'Email', 'Huerta/Compostera', 'Dir. Huerta', 'Eventos inscriptos', 'Detalle eventos', 'Turnos ECOescuelas'];
+                for (let i = 1; i <= maxTurnos; i++) turnoFields.forEach(field => headers.push(`Turno ${i} - ${field}`));
 
-                let spreadsheet = headers.join('\t') + '\r\n';
-                records.forEach((record) => {
+                const esc = (v) => { const s = String(v == null ? '' : v); return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s; };
+                const rows = [headers.map(esc).join(',')];
+                for (const person of people) {
+                    const u = person.userData;
                     const row = [
-                        record.name,
-                        record.dni,
-                        record.email,
-                        record.phone,
-                        record.address,
-                        record.hasHuerta,
-                        record.huertaAddress,
-                        record.courseTitle,
-                        record.currentStatus,
-                        record.totalEnrollments,
-                        ...record.enrollments,
+                        u ? u.name : person.enrolledName,
+                        u ? u.dni : '',
+                        u ? u.address : '',
+                        u ? u.phone : '',
+                        u ? u.email : '',
+                        u ? (u.hasHuerta ? 'Sí' : 'No') : '-',
+                        u && u.hasHuerta ? u.huertaAddress : '',
+                        person.courses.length,
+                        person.courses.map(c => `${c.title} (${c.date || 'S/F'}) [${c.status}]`).join(' | '),
+                        person.turnos.length,
                     ];
+                    person.turnos.forEach(t => {
+                        const r = t.reservation;
+                        row.push(
+                            r.institucion || '',
+                            r.taller || '',
+                            t.date || '',
+                            t.time || '',
+                            r.tipo || '',
+                            r.nivel || '',
+                            r.grado || '',
+                            r.referente || '',
+                            r.telefono || '',
+                            r.contactoEmail || '',
+                            r.alumnos || '',
+                            r.acompanantes || '',
+                            r.asistentes || '',
+                            r.observaciones || ''
+                        );
+                    });
                     while (row.length < headers.length) row.push('');
-                    spreadsheet += row.map(escapeSpreadsheetCell).join('\t') + '\r\n';
-                });
+                    rows.push(row.map(esc).join(','));
+                }
 
-                const blob = new Blob([spreadsheet], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                const bom = '\uFEFF';
+                const blob = new Blob([bom + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 const dateSuffix = new Date().toISOString().slice(0, 10);
-                link.setAttribute('download', `inscriptos_completo_${dateSuffix}.xls`);
+                link.setAttribute('download', `personas_inscriptos_${dateSuffix}.csv`);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
