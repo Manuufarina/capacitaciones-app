@@ -2133,7 +2133,7 @@ function cancelSlotAdmin(slotId) {
                         courseTitle,
                         currentStatus: userDoc.data().status || 'inscripto',
                         totalEnrollments: userEnrollmentsCache.get(uid).length,
-                        enrollments: [...userEnrollmentsCache.get(uid)]
+                        allEnrollments: userEnrollmentsCache.get(uid).join(' | ')
                     });
                 }
             }
@@ -2150,13 +2150,9 @@ function cancelSlotAdmin(slotId) {
                     return;
                 }
 
-                const maxEnrollments = records.reduce((max, record) => Math.max(max, record.enrollments.length), 0);
-                const headers = ['Nombre', 'DNI', 'Email', 'Teléfono', 'Dirección', 'Tiene huerta/compostera', 'Dirección huerta/compostera', 'Evento actual', 'Estado actual', 'Cantidad de inscripciones'];
-                for (let i = 1; i <= maxEnrollments; i++) headers.push(`Inscripción ${i}`);
-
-                let spreadsheet = headers.join('\t') + '\r\n';
+                let spreadsheet = 'Nombre\tDNI\tEmail\tTeléfono\tDirección\tTiene huerta/compostera\tDirección huerta/compostera\tEvento actual\tEstado actual\tCantidad de inscripciones\tInscripciones realizadas\r\n';
                 records.forEach((record) => {
-                    const row = [
+                    spreadsheet += [
                         record.name,
                         record.dni,
                         record.email,
@@ -2167,10 +2163,8 @@ function cancelSlotAdmin(slotId) {
                         record.courseTitle,
                         record.currentStatus,
                         record.totalEnrollments,
-                        ...record.enrollments,
-                    ];
-                    while (row.length < headers.length) row.push('');
-                    spreadsheet += row.map(escapeSpreadsheetCell).join('\t') + '\r\n';
+                        record.allEnrollments,
+                    ].map(escapeSpreadsheetCell).join('\t') + '\r\n';
                 });
 
                 const blob = new Blob([spreadsheet], { type: 'application/vnd.ms-excel;charset=utf-8;' });
